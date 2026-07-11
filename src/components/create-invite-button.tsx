@@ -54,12 +54,12 @@ export function CreateInviteButton() {
   const [inviteUrl, setInviteUrl] = useState("");
 
   async function createAndCopyInvite() {
+    setInviteUrl("");
+    setState("creating");
+
     const code = createInviteCode();
     const url = `${window.location.origin}/register/${code}`;
     const browserCopyPromise = copyText(url);
-
-    setInviteUrl(url);
-    setState("creating");
 
     try {
       const response = await fetch("/api/teacher/invitations", {
@@ -80,6 +80,7 @@ export function CreateInviteButton() {
       setInviteUrl(data.url);
       setState(browserCopied || data.hostClipboard ? "copied" : "failed");
     } catch {
+      setInviteUrl("");
       setState("failed");
     }
   }
@@ -109,6 +110,7 @@ export function CreateInviteButton() {
         </div>
       ) : null}
 
+      {state === "creating" ? <small>Старая ссылка удалена. Создаю и копирую новое приглашение...</small> : null}
       {state === "copied" ? <small>Ссылка уже в буфере. Можно вставлять в чат или Блокнот.</small> : null}
       {state === "failed" ? (
         <small>Телефон мог заблокировать буфер обмена на http. Нажми “Скопировать ещё раз” или зажми ссылку.</small>
