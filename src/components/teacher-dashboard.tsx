@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { Invitation } from "@/data/invitations";
 import type { Student } from "@/data/students";
 
 type SortKey = "name" | "averageScore" | "completedTasks";
@@ -11,7 +12,17 @@ const sortLabels: Record<SortKey, string> = {
   completedTasks: "по заданиям",
 };
 
-export function TeacherDashboard({ students }: { students: Student[] }) {
+export function TeacherDashboard({
+  createInvitationAction,
+  createdInviteCode,
+  invitations,
+  students,
+}: {
+  createInvitationAction: () => Promise<void>;
+  createdInviteCode?: string;
+  invitations: Invitation[];
+  students: Student[];
+}) {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
 
@@ -46,9 +57,31 @@ export function TeacherDashboard({ students }: { students: Student[] }) {
           <h1>Список учеников</h1>
         </div>
 
-        <button type="button" className="invite-button">
-          Создать приглашение
-        </button>
+        <form action={createInvitationAction}>
+          <button type="submit" className="invite-button">
+            Создать приглашение
+          </button>
+        </form>
+      </div>
+
+      {createdInviteCode ? (
+        <div className="invite-result">
+          <span>Новое приглашение</span>
+          <a href={`/register/${createdInviteCode}`}>{`/register/${createdInviteCode}`}</a>
+        </div>
+      ) : null}
+
+      <div className="invite-list">
+        {invitations.map((invitation) => (
+          <a
+            key={invitation.code}
+            className={invitation.isUsed ? "invite-chip invite-chip-used" : "invite-chip"}
+            href={`/register/${invitation.code}`}
+          >
+            <span>{invitation.code}</span>
+            <small>{invitation.isUsed ? "использовано" : "свободно"} · {invitation.createdAt}</small>
+          </a>
+        ))}
       </div>
 
       <div className="teacher-controls">

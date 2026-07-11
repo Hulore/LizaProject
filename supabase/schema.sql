@@ -93,3 +93,5 @@ values
   ('LZ-1F6M-FD82'),
   ('LZ-7A3T-NV55')
 on conflict (code) do nothing;
+
+create index if not exists invitations_created_at_idx on public.invitations (created_at desc);

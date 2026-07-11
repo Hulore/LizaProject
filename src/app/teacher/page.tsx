@@ -1,13 +1,21 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { TeacherDashboard } from "@/components/teacher-dashboard";
+import { getRecentInvitations } from "@/data/invitations";
 import { getStudentsForTeacher } from "@/data/students";
 import { requireTeacherSession } from "@/lib/auth";
 import { logoutAction } from "../login/actions";
+import { createInvitationAction } from "./actions";
 
-export default async function TeacherPage() {
+export default async function TeacherPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ invite?: string }>;
+}) {
   await requireTeacherSession();
+  const params = await searchParams;
   const students = await getStudentsForTeacher();
+  const invitations = await getRecentInvitations();
 
   return (
     <div className="min-h-screen bg-white text-[var(--ink)]">
@@ -24,7 +32,12 @@ export default async function TeacherPage() {
             </button>
           </form>
         </div>
-        <TeacherDashboard students={students} />
+        <TeacherDashboard
+          createInvitationAction={createInvitationAction}
+          createdInviteCode={params?.invite}
+          invitations={invitations}
+          students={students}
+        />
       </main>
     </div>
   );

@@ -153,6 +153,9 @@ a { color: inherit; text-decoration: none; }
   gap: .8rem;
   grid-template-columns: repeat(2, 1fr);
 }
+.auth-actions-single {
+  grid-template-columns: 1fr;
+}
 .auth-actions a,
 .auth-actions button,
 .invite-button,
@@ -179,6 +182,45 @@ a { color: inherit; text-decoration: none; }
   border: 2px solid var(--ink);
   padding: .85rem 1rem;
   font-weight: 900;
+}
+.auth-success {
+  margin: 0;
+  border: 2px solid var(--ink);
+  padding: .85rem 1rem;
+  font-weight: 900;
+}
+.invite-result,
+.invite-list {
+  display: grid;
+  gap: .75rem;
+}
+.invite-result {
+  border: 3px solid var(--ink);
+  padding: 1rem;
+}
+.invite-result span,
+.invite-result a,
+.invite-chip span {
+  font-weight: 900;
+}
+.invite-result a {
+  overflow-wrap: anywhere;
+}
+.invite-list {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.invite-chip {
+  display: grid;
+  gap: .25rem;
+  border: 2px solid var(--ink);
+  padding: .85rem 1rem;
+}
+.invite-chip small {
+  color: #555;
+  font-weight: 800;
+}
+.invite-chip-used {
+  opacity: .55;
 }
 .teacher-test-login {
   margin: 0;

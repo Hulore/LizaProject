@@ -8,7 +8,7 @@ import { loginAction } from "./actions";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string }>;
+  searchParams?: Promise<{ error?: string; registered?: string }>;
 }) {
   const session = await getTeacherSession();
 
@@ -18,6 +18,7 @@ export default async function LoginPage({
 
   const params = await searchParams;
   const error = params?.error;
+  const registered = params?.registered === "student";
 
   return (
     <div className="min-h-screen bg-white text-[var(--ink)]">
@@ -51,6 +52,8 @@ export default async function LoginPage({
                 {error === "empty" ? "Введи логин и пароль." : "Логин или пароль не подошли."}
               </p>
             ) : null}
+
+            {registered ? <p className="auth-success">Аккаунт ученика создан. Вход ученика подключим следующим шагом.</p> : null}
 
             <div className="auth-actions">
               <Link href="/">Войти как ученик</Link>
