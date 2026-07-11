@@ -8,12 +8,25 @@ function copyToHostClipboard(text: string) {
     return false;
   }
 
-  const result = spawnSync("clip.exe", {
+  const clipResult = spawnSync("clip.exe", {
     input: text,
     windowsHide: true,
   });
 
-  return result.status === 0;
+  if (clipResult.status === 0) {
+    return true;
+  }
+
+  const powershellResult = spawnSync(
+    "powershell.exe",
+    ["-NoProfile", "-NonInteractive", "-Command", "Set-Clipboard -Value ([Console]::In.ReadToEnd())"],
+    {
+      input: text,
+      windowsHide: true,
+    },
+  );
+
+  return powershellResult.status === 0;
 }
 
 export async function POST(request: NextRequest) {

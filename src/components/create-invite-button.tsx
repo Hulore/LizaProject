@@ -12,10 +12,14 @@ function createInviteCode() {
   return `LZ-${hex.slice(0, 4)}-${hex.slice(4)}`;
 }
 
-function copyText(text: string): boolean {
+async function copyText(text: string): Promise<boolean> {
   if (window.isSecureContext && navigator.clipboard?.writeText) {
-    void navigator.clipboard.writeText(text);
-    return true;
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   const textarea = document.createElement("textarea");
@@ -52,7 +56,7 @@ export function CreateInviteButton() {
   async function createAndCopyInvite() {
     const code = createInviteCode();
     const url = `${window.location.origin}/register/${code}`;
-    const copied = copyText(url);
+    const browserCopyPromise = copyText(url);
 
     setInviteUrl(url);
     setState("creating");
@@ -71,9 +75,10 @@ export function CreateInviteButton() {
       }
 
       const data = (await response.json()) as { hostClipboard?: boolean; url: string };
+      const browserCopied = await browserCopyPromise;
 
       setInviteUrl(data.url);
-      setState(copied || data.hostClipboard ? "copied" : "failed");
+      setState(browserCopied || data.hostClipboard ? "copied" : "failed");
     } catch {
       setState("failed");
     }
@@ -84,7 +89,7 @@ export function CreateInviteButton() {
       return;
     }
 
-    setState(copyText(inviteUrl) ? "copied" : "failed");
+    setState((await copyText(inviteUrl)) ? "copied" : "failed");
   }
 
   return (
