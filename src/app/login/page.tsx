@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { teacherAccount } from "@/data/students";
+import { getTeacherSession } from "@/lib/auth";
 import { loginAction } from "./actions";
 
 export default async function LoginPage({
@@ -8,6 +10,12 @@ export default async function LoginPage({
 }: {
   searchParams?: Promise<{ error?: string }>;
 }) {
+  const session = await getTeacherSession();
+
+  if (session) {
+    redirect("/teacher");
+  }
+
   const params = await searchParams;
   const error = params?.error;
 

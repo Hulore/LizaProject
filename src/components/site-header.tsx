@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { getTeacherSession } from "@/lib/auth";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const teacherSession = await getTeacherSession();
+
   return (
     <header className="border-b border-black/10 bg-white">
       <div className="mock-header-inner mx-auto grid min-h-32 max-w-[1380px] grid-cols-[1fr_auto] items-center gap-5 px-5 py-5 sm:px-8 lg:grid-cols-[180px_1fr_180px] lg:px-10">
@@ -12,9 +15,15 @@ export function SiteHeader() {
           <em>+ Вайб</em>
         </Link>
 
-        <Link href="/login" className="auth-button">
-          Регистрация/вход
-        </Link>
+        {teacherSession ? (
+          <Link href="/teacher" className="auth-button account-button" title="Открыть кабинет учителя">
+            {teacherSession.login}
+          </Link>
+        ) : (
+          <Link href="/login" className="auth-button">
+            Регистрация/вход
+          </Link>
+        )}
       </div>
     </header>
   );
