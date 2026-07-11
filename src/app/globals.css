@@ -147,6 +147,7 @@ a { color: inherit; text-decoration: none; }
   grid-template-columns: repeat(2, 1fr);
 }
 .auth-actions a,
+.auth-actions button,
 .invite-button,
 .back-link {
   display: grid;
@@ -157,12 +158,20 @@ a { color: inherit; text-decoration: none; }
   padding: 0 1rem;
   font-weight: 900;
   text-align: center;
+  cursor: pointer;
 }
 .auth-actions a:hover,
+.auth-actions button:hover,
 .invite-button:hover,
 .back-link:hover {
   background: var(--ink);
   color: white;
+}
+.auth-error {
+  margin: 0;
+  border: 2px solid var(--ink);
+  padding: .85rem 1rem;
+  font-weight: 900;
 }
 .teacher-test-login {
   margin: 0;
@@ -170,9 +179,14 @@ a { color: inherit; text-decoration: none; }
   padding-top: 1rem;
   font-weight: 800;
 }
+.teacher-page-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
 .back-link {
   width: fit-content;
-  margin-bottom: 1.5rem;
 }
 .teacher-shell {
   display: grid;
@@ -240,6 +254,11 @@ a { color: inherit; text-decoration: none; }
     align-items: stretch;
     flex-direction: column;
   }
+  .teacher-page-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .back-link { width: 100%; }
 }
 
 @media (max-width: 430px) {
