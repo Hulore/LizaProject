@@ -49,7 +49,7 @@ create policy "Allow public read for prototype invitations"
   using (true);
 
 insert into public.teacher_accounts (login, password_hash, display_name)
-values ('TestTeacher', crypt('123321', gen_salt('bf')), 'TestTeacher')
+values ('TestTeacher', extensions.crypt('123321', extensions.gen_salt('bf')), 'TestTeacher')
 on conflict (login) do nothing;
 
 create or replace function public.verify_teacher_login(input_login text, input_password text)
@@ -62,7 +62,7 @@ as $$
     select 1
     from public.teacher_accounts
     where login = input_login
-      and password_hash = crypt(input_password, password_hash)
+      and password_hash = extensions.crypt(input_password, password_hash)
   );
 $$;
 
@@ -72,14 +72,14 @@ grant execute on function public.verify_teacher_login(text, text) to anon, authe
 insert into public.students
   (name, login, password_hash, invite_code, subjects, exams, last_activity, completed_tasks, average_score)
 values
-  ('Алина Морозова', 'student_alina', crypt('Q7v!2mZp#19a', gen_salt('bf')), 'LZ-8K2P-MR91', array['История', 'Обществознание'], array['ЕГЭ'], 'Сегодня', 42, 78),
-  ('Матвей Орлов', 'student_matvey', crypt('N4r$8xTc@52q', gen_salt('bf')), 'LZ-3Q7N-OL44', array['История'], array['ОГЭ'], 'Вчера', 18, 64),
-  ('София Белова', 'student_sofia', crypt('H9p&6dVy!03s', gen_salt('bf')), 'LZ-6B1S-BL28', array['Обществознание'], array['ЕГЭ'], '2 дня назад', 35, 82),
-  ('Иван Соколов', 'student_ivan', crypt('R2k#9wLp$74f', gen_salt('bf')), 'LZ-5V8D-SK63', array['История', 'Обществознание'], array['ОГЭ', 'ЕГЭ'], 'Сегодня', 51, 71),
-  ('Ева Кузнецова', 'student_eva', crypt('T8z!1qMa#66u', gen_salt('bf')), 'LZ-2C4E-KZ10', array['Обществознание'], array['ОГЭ'], '5 дней назад', 11, 58),
-  ('Даниил Волков', 'student_daniil', crypt('M6y$3hXn@81p', gen_salt('bf')), 'LZ-9H5W-VK37', array['История'], array['ЕГЭ'], 'Сегодня', 27, 69),
-  ('Мария Федорова', 'student_maria', crypt('P1s&7jRb!48k', gen_salt('bf')), 'LZ-1F6M-FD82', array['История', 'Обществознание'], array['ЕГЭ'], '3 дня назад', 63, 87),
-  ('Артем Новиков', 'student_artem', crypt('V5c#0nGt$25e', gen_salt('bf')), 'LZ-7A3T-NV55', array['Обществознание'], array['ЕГЭ'], 'Неделю назад', 9, 49)
+  ('Алина Морозова', 'student_alina', extensions.crypt('Q7v!2mZp#19a', extensions.gen_salt('bf')), 'LZ-8K2P-MR91', array['История', 'Обществознание'], array['ЕГЭ'], 'Сегодня', 42, 78),
+  ('Матвей Орлов', 'student_matvey', extensions.crypt('N4r$8xTc@52q', extensions.gen_salt('bf')), 'LZ-3Q7N-OL44', array['История'], array['ОГЭ'], 'Вчера', 18, 64),
+  ('София Белова', 'student_sofia', extensions.crypt('H9p&6dVy!03s', extensions.gen_salt('bf')), 'LZ-6B1S-BL28', array['Обществознание'], array['ЕГЭ'], '2 дня назад', 35, 82),
+  ('Иван Соколов', 'student_ivan', extensions.crypt('R2k#9wLp$74f', extensions.gen_salt('bf')), 'LZ-5V8D-SK63', array['История', 'Обществознание'], array['ОГЭ', 'ЕГЭ'], 'Сегодня', 51, 71),
+  ('Ева Кузнецова', 'student_eva', extensions.crypt('T8z!1qMa#66u', extensions.gen_salt('bf')), 'LZ-2C4E-KZ10', array['Обществознание'], array['ОГЭ'], '5 дней назад', 11, 58),
+  ('Даниил Волков', 'student_daniil', extensions.crypt('M6y$3hXn@81p', extensions.gen_salt('bf')), 'LZ-9H5W-VK37', array['История'], array['ЕГЭ'], 'Сегодня', 27, 69),
+  ('Мария Федорова', 'student_maria', extensions.crypt('P1s&7jRb!48k', extensions.gen_salt('bf')), 'LZ-1F6M-FD82', array['История', 'Обществознание'], array['ЕГЭ'], '3 дня назад', 63, 87),
+  ('Артем Новиков', 'student_artem', extensions.crypt('V5c#0nGt$25e', extensions.gen_salt('bf')), 'LZ-7A3T-NV55', array['Обществознание'], array['ЕГЭ'], 'Неделю назад', 9, 49)
 on conflict (login) do nothing;
 
 insert into public.invitations (code)

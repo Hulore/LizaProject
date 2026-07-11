@@ -8,7 +8,7 @@ as $$
     select 1
     from public.teacher_accounts
     where login = input_login
-      and password_hash = crypt(input_password, password_hash)
+      and password_hash = extensions.crypt(input_password, password_hash)
   );
 $$;
 
