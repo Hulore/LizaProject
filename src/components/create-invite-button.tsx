@@ -70,10 +70,10 @@ export function CreateInviteButton() {
         throw new Error("Failed to create invitation.");
       }
 
-      const data = (await response.json()) as { url: string };
+      const data = (await response.json()) as { hostClipboard?: boolean; url: string };
 
       setInviteUrl(data.url);
-      setState(copied ? "copied" : "failed");
+      setState(copied || data.hostClipboard ? "copied" : "failed");
     } catch {
       setState("failed");
     }
@@ -104,7 +104,7 @@ export function CreateInviteButton() {
         </div>
       ) : null}
 
-      {state === "copied" ? <small>Ссылка уже в буфере. Можно вставлять в чат.</small> : null}
+      {state === "copied" ? <small>Ссылка уже в буфере. Можно вставлять в чат или Блокнот.</small> : null}
       {state === "failed" ? (
         <small>Телефон мог заблокировать буфер обмена на http. Нажми “Скопировать ещё раз” или зажми ссылку.</small>
       ) : null}
