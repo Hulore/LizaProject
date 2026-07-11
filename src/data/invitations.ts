@@ -14,11 +14,21 @@ function createInviteCode() {
   return `LZ-${first}-${second}`;
 }
 
-export async function createInvitationForTeacher(teacherLogin: string) {
-  const pool = getPostgresPool();
+const inviteCodePattern = /^LZ-[0-9A-F]{4}-[0-9A-F]{4}$/;
 
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const code = createInviteCode();
+export function isInviteCode(value: string) {
+  return inviteCodePattern.test(value);
+}
+
+export async function createInvitationForTeacher(teacherLogin: string, requestedCode?: string) {
+  const pool = getPostgresPool();
+  const codes = requestedCode ? [requestedCode] : Array.from({ length: 5 }, () => createInviteCode());
+
+  for (const code of codes) {
+    if (!isInviteCode(code)) {
+      continue;
+    }
+
     const result = await pool.query<{ code: string }>(
       `
         insert into public.invitations (code, created_by)
@@ -36,7 +46,7 @@ export async function createInvitationForTeacher(teacherLogin: string) {
     }
   }
 
-  throw new Error("Не получилось создать уникальное приглашение.");
+  throw new Error(requestedCode ? "Такой код приглашения уже занят." : "Не получилось создать уникальное приглашение.");
 }
 
 export async function getRecentInvitations(limit = 5): Promise<Invitation[]> {

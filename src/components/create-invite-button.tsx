@@ -4,9 +4,17 @@ import { useState } from "react";
 
 type CreateInviteState = "idle" | "creating" | "copied" | "failed";
 
-async function copyText(text: string): Promise<boolean> {
+function createInviteCode() {
+  const bytes = new Uint8Array(4);
+  window.crypto.getRandomValues(bytes);
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0").toUpperCase()).join("");
+
+  return `LZ-${hex.slice(0, 4)}-${hex.slice(4)}`;
+}
+
+function copyText(text: string): boolean {
   if (window.isSecureContext && navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
+    void navigator.clipboard.writeText(text);
     return true;
   }
 
@@ -42,11 +50,20 @@ export function CreateInviteButton() {
   const [inviteUrl, setInviteUrl] = useState("");
 
   async function createAndCopyInvite() {
+    const code = createInviteCode();
+    const url = `${window.location.origin}/register/${code}`;
+    const copied = copyText(url);
+
+    setInviteUrl(url);
     setState("creating");
 
     try {
       const response = await fetch("/api/teacher/invitations", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code }),
       });
 
       if (!response.ok) {
@@ -56,7 +73,7 @@ export function CreateInviteButton() {
       const data = (await response.json()) as { url: string };
 
       setInviteUrl(data.url);
-      setState((await copyText(data.url)) ? "copied" : "failed");
+      setState(copied ? "copied" : "failed");
     } catch {
       setState("failed");
     }
@@ -67,7 +84,7 @@ export function CreateInviteButton() {
       return;
     }
 
-    setState((await copyText(inviteUrl)) ? "copied" : "failed");
+    setState(copyText(inviteUrl) ? "copied" : "failed");
   }
 
   return (
@@ -87,7 +104,7 @@ export function CreateInviteButton() {
         </div>
       ) : null}
 
-      {state === "copied" ? <small>Ссылка создана и скопирована.</small> : null}
+      {state === "copied" ? <small>Ссылка уже в буфере. Можно вставлять в чат.</small> : null}
       {state === "failed" ? (
         <small>Телефон мог заблокировать буфер обмена на http. Нажми “Скопировать ещё раз” или зажми ссылку.</small>
       ) : null}
