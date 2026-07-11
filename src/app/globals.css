@@ -55,6 +55,19 @@ a { color: inherit; text-decoration: none; }
 .account-button {
   min-width: 0;
 }
+.header-account {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .6rem;
+  justify-self: end;
+  min-width: 0;
+}
+.header-account form {
+  display: grid;
+}
+.logout-button {
+  cursor: pointer;
+}
 
 .mock-subject-card {
   display: flex;
@@ -357,6 +370,9 @@ a { color: inherit; text-decoration: none; }
     align-items: stretch;
     flex-direction: column;
   }
+  .header-account {
+    grid-template-columns: 1fr;
+  }
   .back-link { width: 100%; }
 }
 
@@ -370,6 +386,7 @@ a { color: inherit; text-decoration: none; }
     font-size: .55rem;
   }
   .auth-button { justify-self: stretch; }
+  .header-account { justify-self: stretch; }
   .auth-panel { padding: 1.2rem; }
   .student-row { grid-template-columns: 1fr; }
 }

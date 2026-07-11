@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { logoutAction } from "@/app/login/actions";
 import { getSession } from "@/lib/auth";
 
 export async function SiteHeader() {
@@ -16,13 +17,20 @@ export async function SiteHeader() {
         </Link>
 
         {session ? (
-          <Link
-            href={session.role === "teacher" ? "/teacher" : "/"}
-            className="auth-button account-button"
-            title={session.role === "teacher" ? "Открыть кабинет учителя" : "Аккаунт ученика"}
-          >
-            {session.name ?? session.login}
-          </Link>
+          <div className="header-account">
+            <Link
+              href={session.role === "teacher" ? "/teacher" : "/"}
+              className="auth-button account-button"
+              title={session.role === "teacher" ? "Открыть кабинет учителя" : "Аккаунт ученика"}
+            >
+              {session.name ?? session.login}
+            </Link>
+            <form action={logoutAction}>
+              <button type="submit" className="auth-button logout-button">
+                Выйти
+              </button>
+            </form>
+          </div>
         ) : (
           <Link href="/login" className="auth-button">
             Регистрация/вход
