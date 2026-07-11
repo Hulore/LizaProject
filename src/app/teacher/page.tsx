@@ -5,7 +5,6 @@ import { getRecentInvitations } from "@/data/invitations";
 import { getStudentsForTeacher } from "@/data/students";
 import { requireTeacherSession } from "@/lib/auth";
 import { logoutAction } from "../login/actions";
-import { createInvitationAction } from "./actions";
 
 export default async function TeacherPage({
   searchParams,
@@ -33,7 +32,6 @@ export default async function TeacherPage({
           </form>
         </div>
         <TeacherDashboard
-          createInvitationAction={createInvitationAction}
           createdInviteCode={params?.invite}
           invitations={invitations}
           students={students}

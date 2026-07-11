@@ -211,6 +211,19 @@ a { color: inherit; text-decoration: none; }
   display: grid;
   gap: .75rem;
 }
+.create-invite-box {
+  display: grid;
+  gap: .5rem;
+  justify-items: stretch;
+}
+.create-invite-box small,
+.created-invite-link {
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+.create-invite-box small {
+  color: #555;
+}
 .invite-copy-box button {
   min-height: 3.2rem;
   border: 2px solid var(--ink);

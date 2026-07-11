@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CopyInviteLink } from "@/components/copy-invite-link";
+import { CreateInviteButton } from "@/components/create-invite-button";
 import type { Invitation } from "@/data/invitations";
 import type { Student } from "@/data/students";
 
@@ -14,12 +14,10 @@ const sortLabels: Record<SortKey, string> = {
 };
 
 export function TeacherDashboard({
-  createInvitationAction,
   createdInviteCode,
   invitations,
   students,
 }: {
-  createInvitationAction: () => Promise<void>;
   createdInviteCode?: string;
   invitations: Invitation[];
   students: Student[];
@@ -58,17 +56,13 @@ export function TeacherDashboard({
           <h1>Список учеников</h1>
         </div>
 
-        <form action={createInvitationAction}>
-          <button type="submit" className="invite-button">
-            Создать приглашение
-          </button>
-        </form>
+        <CreateInviteButton />
       </div>
 
       {createdInviteCode ? (
         <div className="invite-result">
           <span>Новое приглашение</span>
-          <CopyInviteLink code={createdInviteCode} />
+          <a href={`/register/${createdInviteCode}`}>{`/register/${createdInviteCode}`}</a>
         </div>
       ) : null}
 
