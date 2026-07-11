@@ -1,0 +1,261 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #111111;
+  --violet: #7257e8;
+}
+
+@theme inline {
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-unbounded);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: white;
+  color: var(--ink);
+  font-family: var(--font-manrope), Arial, sans-serif;
+}
+button, a { -webkit-tap-highlight-color: transparent; }
+a { color: inherit; text-decoration: none; }
+
+.brand-banner {
+  display: flex;
+  min-height: 4.3rem;
+  align-items: center;
+  justify-content: center;
+  gap: .65rem;
+  border: 3px solid var(--ink);
+  background: white;
+  padding: .7rem 1rem;
+  font-family: var(--font-unbounded), sans-serif;
+  font-size: .9rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: center;
+}
+.brand-banner strong { color: var(--violet); font-weight: 900; }
+.brand-banner em { font-family: var(--font-manrope), sans-serif; font-weight: 900; white-space: nowrap; }
+.auth-button {
+  justify-self: end;
+  border: 2px solid var(--ink);
+  background: white;
+  padding: .85rem 1rem;
+  font-weight: 900;
+  text-align: center;
+  transition: background .15s ease, color .15s ease;
+}
+.auth-button:hover { background: var(--ink); color: white; }
+
+.mock-subject-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.mock-subject-panel {
+  display: grid;
+  width: 100%;
+  min-height: 320px;
+  place-items: center;
+  border: 3px solid var(--ink);
+  background: white;
+  padding: 2rem;
+}
+.mock-subject-panel h2 {
+  font-family: var(--font-unbounded), sans-serif;
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.mock-subject-panel-social-studies h2 {
+  font-size: 2rem;
+}
+.mock-exam-row {
+  display: grid;
+  width: min(85%, 360px);
+  grid-template-columns: 1fr 1fr;
+  gap: .8rem;
+  margin-top: 1rem;
+}
+.mock-exam-row a {
+  display: grid;
+  min-height: 58px;
+  place-items: center;
+  border: 3px solid var(--ink);
+  background: white;
+  font-family: var(--font-unbounded), sans-serif;
+  font-weight: 800;
+  transition: background .15s ease, color .15s ease;
+}
+.mock-exam-row a:hover { background: var(--ink); color: white; }
+
+.auth-page {
+  display: grid;
+  min-height: calc(100vh - 8rem);
+  place-items: center;
+  padding: 3rem 1.25rem 5rem;
+}
+.auth-panel {
+  display: grid;
+  width: min(100%, 760px);
+  gap: 2rem;
+  border: 3px solid var(--ink);
+  padding: 2rem;
+}
+.auth-copy p,
+.teacher-kicker {
+  margin: 0 0 .4rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.auth-copy h1,
+.teacher-toolbar h1 {
+  margin: 0;
+  font-family: var(--font-unbounded), sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+.auth-form,
+.teacher-controls {
+  display: grid;
+  gap: 1rem;
+}
+.auth-form label,
+.teacher-controls label {
+  display: grid;
+  gap: .45rem;
+  font-weight: 900;
+}
+.auth-form input,
+.teacher-controls input,
+.teacher-controls select {
+  min-height: 3.2rem;
+  border: 2px solid var(--ink);
+  background: white;
+  padding: 0 .9rem;
+  color: var(--ink);
+  font: inherit;
+}
+.auth-actions {
+  display: grid;
+  gap: .8rem;
+  grid-template-columns: repeat(2, 1fr);
+}
+.auth-actions a,
+.invite-button,
+.back-link {
+  display: grid;
+  min-height: 3.2rem;
+  place-items: center;
+  border: 2px solid var(--ink);
+  background: white;
+  padding: 0 1rem;
+  font-weight: 900;
+  text-align: center;
+}
+.auth-actions a:hover,
+.invite-button:hover,
+.back-link:hover {
+  background: var(--ink);
+  color: white;
+}
+.teacher-test-login {
+  margin: 0;
+  border-top: 2px solid var(--ink);
+  padding-top: 1rem;
+  font-weight: 800;
+}
+.back-link {
+  width: fit-content;
+  margin-bottom: 1.5rem;
+}
+.teacher-shell {
+  display: grid;
+  gap: 1.4rem;
+}
+.teacher-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 3px solid var(--ink);
+  padding: 1.5rem;
+}
+.teacher-controls {
+  grid-template-columns: minmax(0, 1fr) 220px;
+}
+.student-list {
+  display: grid;
+  gap: .75rem;
+}
+.student-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1.2fr .7fr .8fr 1fr;
+  gap: 1rem;
+  align-items: center;
+  border: 2px solid var(--ink);
+  padding: 1rem;
+}
+.student-row h2,
+.student-row p {
+  margin: 0;
+}
+.student-row h2,
+.student-row span {
+  font-weight: 900;
+}
+.student-row p {
+  margin-top: .25rem;
+  color: #555;
+  font-size: .9rem;
+}
+
+@media (max-width: 900px) {
+  .brand-banner { font-size: .72rem; }
+  .student-row { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 640px) {
+  .brand-banner {
+    min-height: auto;
+    justify-content: flex-start;
+    gap: .25rem;
+    border: 0;
+    padding: 0;
+    font-size: .6rem;
+  }
+  .mock-subject-panel { min-height: 240px; }
+  .mock-subject-panel h2 { font-size: 2rem; }
+  .mock-subject-panel-social-studies h2 { font-size: 1.45rem; }
+  .auth-actions,
+  .teacher-controls {
+    grid-template-columns: 1fr;
+  }
+  .teacher-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 430px) {
+  .mock-header-inner { grid-template-columns: 1fr; }
+  .brand-banner {
+    width: 100%;
+    min-height: 3.5rem;
+    justify-content: center;
+    border: 2px solid var(--ink);
+    font-size: .55rem;
+  }
+  .auth-button { justify-self: stretch; }
+  .auth-panel { padding: 1.2rem; }
+  .student-row { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; }
+}
