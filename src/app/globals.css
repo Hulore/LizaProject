@@ -216,6 +216,22 @@ a { color: inherit; text-decoration: none; }
   gap: .5rem;
   justify-items: stretch;
 }
+.created-invite-box {
+  display: grid;
+  gap: .5rem;
+}
+.created-invite-box button {
+  min-height: 3rem;
+  border: 2px solid var(--ink);
+  background: white;
+  padding: 0 1rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.created-invite-box button:hover {
+  background: var(--ink);
+  color: white;
+}
 .create-invite-box small,
 .created-invite-link {
   font-weight: 900;
