@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { TeacherDashboard } from "@/components/teacher-dashboard";
-import { students } from "@/data/students";
+import { getStudentsForTeacher } from "@/data/students";
 
-export default function TeacherPage() {
+export default async function TeacherPage() {
+  const students = await getStudentsForTeacher();
+
   return (
     <div className="min-h-screen bg-white text-[var(--ink)]">
       <SiteHeader />
