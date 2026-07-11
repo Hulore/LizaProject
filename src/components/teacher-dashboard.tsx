@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { CopyInviteLink } from "@/components/copy-invite-link";
 import type { Invitation } from "@/data/invitations";
 import type { Student } from "@/data/students";
 
@@ -67,7 +68,7 @@ export function TeacherDashboard({
       {createdInviteCode ? (
         <div className="invite-result">
           <span>Новое приглашение</span>
-          <a href={`/register/${createdInviteCode}`}>{`/register/${createdInviteCode}`}</a>
+          <CopyInviteLink code={createdInviteCode} />
         </div>
       ) : null}
 

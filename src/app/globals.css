@@ -203,8 +203,29 @@ a { color: inherit; text-decoration: none; }
 .invite-chip span {
   font-weight: 900;
 }
-.invite-result a {
+.invite-result a,
+.invite-copy-box a {
   overflow-wrap: anywhere;
+}
+.invite-copy-box {
+  display: grid;
+  gap: .75rem;
+}
+.invite-copy-box button {
+  min-height: 3.2rem;
+  border: 2px solid var(--ink);
+  background: white;
+  padding: 0 1rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.invite-copy-box button:hover {
+  background: var(--ink);
+  color: white;
+}
+.invite-copy-box small {
+  color: #555;
+  font-weight: 800;
 }
 .invite-list {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
