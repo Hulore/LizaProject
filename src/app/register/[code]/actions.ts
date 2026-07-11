@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { registerStudentByInvitation } from "@/data/invitations";
+import { createStudentSession } from "@/lib/auth";
 
 export async function registerStudentAction(code: string, formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
@@ -22,5 +23,6 @@ export async function registerStudentAction(code: string, formData: FormData) {
     redirect(`/register/${encodeURIComponent(code)}?error=${result.reason}`);
   }
 
-  redirect("/login?registered=student");
+  await createStudentSession(login, name);
+  redirect("/");
 }

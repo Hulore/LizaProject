@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { getTeacherSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 
 export async function SiteHeader() {
-  const teacherSession = await getTeacherSession();
+  const session = await getSession();
 
   return (
     <header className="border-b border-black/10 bg-white">
@@ -15,9 +15,13 @@ export async function SiteHeader() {
           <em>+ Вайб</em>
         </Link>
 
-        {teacherSession ? (
-          <Link href="/teacher" className="auth-button account-button" title="Открыть кабинет учителя">
-            {teacherSession.login}
+        {session ? (
+          <Link
+            href={session.role === "teacher" ? "/teacher" : "/"}
+            className="auth-button account-button"
+            title={session.role === "teacher" ? "Открыть кабинет учителя" : "Аккаунт ученика"}
+          >
+            {session.name ?? session.login}
           </Link>
         ) : (
           <Link href="/login" className="auth-button">

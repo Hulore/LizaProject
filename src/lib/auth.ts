@@ -3,14 +3,16 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getPostgresPool } from "@/lib/postgres";
 import { createSupabaseServerClient } from "@/lib/supabase";
 
 const sessionCookieName = "liza_session";
 const sessionTtlSeconds = 60 * 60 * 8;
 
-type TeacherSession = {
-  role: "teacher";
+type UserSession = {
+  role: "teacher" | "student";
   login: string;
+  name?: string;
   exp: number;
 };
 
@@ -62,9 +64,31 @@ export async function verifyTeacherCredentials(login: string, password: string) 
   return data === true;
 }
 
-export async function createTeacherSession(login: string) {
+export async function verifyStudentCredentials(login: string, password: string) {
+  const pool = getPostgresPool();
+  const result = await pool.query<{ name: string }>(
+    `
+      select name
+      from public.students
+      where login = $1
+        and password_hash = extensions.crypt($2, password_hash)
+      limit 1
+    `,
+    [login, password],
+  );
+
+  const student = result.rows[0];
+
+  if (!student) {
+    return null;
+  }
+
+  return { login, name: student.name };
+}
+
+export async function createSession({ login, name, role }: Pick<UserSession, "login" | "name" | "role">) {
   const expiresAt = Math.floor(Date.now() / 1000) + sessionTtlSeconds;
-  const payload = toBase64Url(JSON.stringify({ role: "teacher", login, exp: expiresAt } satisfies TeacherSession));
+  const payload = toBase64Url(JSON.stringify({ role, login, name, exp: expiresAt } satisfies UserSession));
   const signature = signPayload(payload);
   const cookieStore = await cookies();
 
@@ -75,6 +99,14 @@ export async function createTeacherSession(login: string) {
     path: "/",
     maxAge: sessionTtlSeconds,
   });
+}
+
+export async function createTeacherSession(login: string) {
+  await createSession({ role: "teacher", login, name: login });
+}
+
+export async function createStudentSession(login: string, name: string) {
+  await createSession({ role: "student", login, name });
 }
 
 export async function clearSession() {
@@ -88,7 +120,7 @@ export async function clearSession() {
   });
 }
 
-export async function getTeacherSession() {
+export async function getSession() {
   const cookieStore = await cookies();
   const rawSession = cookieStore.get(sessionCookieName)?.value;
 
@@ -103,9 +135,9 @@ export async function getTeacherSession() {
   }
 
   try {
-    const session = JSON.parse(fromBase64Url(payload)) as TeacherSession;
+    const session = JSON.parse(fromBase64Url(payload)) as UserSession;
 
-    if (session.role !== "teacher" || session.exp < Math.floor(Date.now() / 1000)) {
+    if (!["teacher", "student"].includes(session.role) || session.exp < Math.floor(Date.now() / 1000)) {
       return null;
     }
 
@@ -113,6 +145,16 @@ export async function getTeacherSession() {
   } catch {
     return null;
   }
+}
+
+export async function getTeacherSession() {
+  const session = await getSession();
+
+  if (session?.role !== "teacher") {
+    return null;
+  }
+
+  return session;
 }
 
 export async function requireTeacherSession() {

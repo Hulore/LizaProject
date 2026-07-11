@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { teacherAccount } from "@/data/students";
-import { getTeacherSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { loginAction } from "./actions";
 
 export default async function LoginPage({
@@ -10,10 +9,10 @@ export default async function LoginPage({
 }: {
   searchParams?: Promise<{ error?: string; registered?: string }>;
 }) {
-  const session = await getTeacherSession();
+  const session = await getSession();
 
   if (session) {
-    redirect("/teacher");
+    redirect(session.role === "teacher" ? "/teacher" : "/");
   }
 
   const params = await searchParams;
@@ -53,11 +52,15 @@ export default async function LoginPage({
               </p>
             ) : null}
 
-            {registered ? <p className="auth-success">Аккаунт ученика создан. Вход ученика подключим следующим шагом.</p> : null}
+            {registered ? <p className="auth-success">Аккаунт ученика создан. Теперь ты вошёл.</p> : null}
 
             <div className="auth-actions">
-              <Link href="/">Войти как ученик</Link>
-              <button type="submit">Войти как учитель</button>
+              <button type="submit" name="role" value="student">
+                Войти как ученик
+              </button>
+              <button type="submit" name="role" value="teacher">
+                Войти как учитель
+              </button>
             </div>
           </form>
 
