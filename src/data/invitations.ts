@@ -23,30 +23,48 @@ export function isInviteCode(value: string) {
 export async function createInvitationForTeacher(teacherLogin: string, requestedCode?: string) {
   const pool = getPostgresPool();
   const codes = requestedCode ? [requestedCode] : Array.from({ length: 5 }, () => createInviteCode());
+  const client = await pool.connect();
 
-  for (const code of codes) {
-    if (!isInviteCode(code)) {
-      continue;
-    }
+  try {
+    await client.query("begin");
 
-    const result = await pool.query<{ code: string }>(
+    await client.query(
       `
-        insert into public.invitations (code, created_by)
-        select $1, id
-        from public.teacher_accounts
-        where login = $2
-        on conflict (code) do nothing
-        returning code
+        delete from public.invitations
       `,
-      [code, teacherLogin],
     );
 
-    if (result.rows[0]?.code) {
-      return result.rows[0].code;
-    }
-  }
+    for (const code of codes) {
+      if (!isInviteCode(code)) {
+        continue;
+      }
 
-  throw new Error(requestedCode ? "Такой код приглашения уже занят." : "Не получилось создать уникальное приглашение.");
+      const result = await client.query<{ code: string }>(
+        `
+          insert into public.invitations (code, created_by)
+          select $1, id
+          from public.teacher_accounts
+          where login = $2
+          on conflict (code) do nothing
+          returning code
+        `,
+        [code, teacherLogin],
+      );
+
+      if (result.rows[0]?.code) {
+        await client.query("commit");
+        return result.rows[0].code;
+      }
+    }
+
+    await client.query("rollback");
+    throw new Error(requestedCode ? "Такой код приглашения уже занят." : "Не получилось создать уникальное приглашение.");
+  } catch (error) {
+    await client.query("rollback").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function getRecentInvitations(limit = 5): Promise<Invitation[]> {

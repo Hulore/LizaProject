@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CreateInviteButton } from "@/components/create-invite-button";
 import type { Invitation } from "@/data/invitations";
 import type { Student } from "@/data/students";
 
@@ -14,11 +13,17 @@ const sortLabels: Record<SortKey, string> = {
 };
 
 export function TeacherDashboard({
+  copiedInvite,
+  createInvitationAction,
   createdInviteCode,
+  createdInviteUrl,
   invitations,
   students,
 }: {
+  copiedInvite?: boolean;
+  createInvitationAction: () => Promise<void>;
   createdInviteCode?: string;
+  createdInviteUrl?: string;
   invitations: Invitation[];
   students: Student[];
 }) {
@@ -56,13 +61,19 @@ export function TeacherDashboard({
           <h1>Список учеников</h1>
         </div>
 
-        <CreateInviteButton />
+        <form action={createInvitationAction} className="create-invite-box">
+          <button type="submit" className="invite-button">
+            Создать приглашение
+          </button>
+          <small>Каждое нажатие удаляет старую свободную ссылку и создаёт новую.</small>
+        </form>
       </div>
 
-      {createdInviteCode ? (
+      {createdInviteCode && createdInviteUrl ? (
         <div className="invite-result">
           <span>Новое приглашение</span>
-          <a href={`/register/${createdInviteCode}`}>{`/register/${createdInviteCode}`}</a>
+          <a href={createdInviteUrl}>{createdInviteUrl}</a>
+          {copiedInvite ? <small>Ссылка уже в буфере. Можно вставлять в чат или Блокнот.</small> : null}
         </div>
       ) : null}
 
