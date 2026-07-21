@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SocialStudiesTaskCatalog } from "@/components/social-studies-task-catalog";
+import { SocialStudiesTrainer } from "@/components/social-studies-trainer";
 import { getSubject } from "@/data/subjects";
 
 export const metadata: Metadata = { title: "ЕГЭ по обществознанию — Лиза + Вайб" };
@@ -26,6 +27,8 @@ export default async function SocialStudiesEgePage({
             На главную
           </Link>
         </section>
+
+        <SocialStudiesTrainer exam="ege" />
 
         <SocialStudiesTaskCatalog
           catalogView={params?.catalogView}
