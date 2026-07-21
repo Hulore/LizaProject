@@ -516,10 +516,275 @@ a { color: inherit; text-decoration: none; }
   overflow-wrap: anywhere;
 }
 
+.catalog-page {
+  font-family: Arial, var(--font-manrope), sans-serif;
+}
+.catalog-page .subject-hero-compact {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: .3rem 1rem;
+  margin-bottom: .6rem;
+  border: 1px solid #b9b9d9;
+  background: #f6f6ff;
+  padding: .7rem .85rem;
+}
+.catalog-page .subject-hero-compact p {
+  grid-column: 1 / -1;
+  color: #34417b;
+  font-size: .8rem;
+}
+.catalog-page .subject-hero-compact h1 {
+  align-self: center;
+  font-family: Arial, var(--font-manrope), sans-serif;
+  font-size: 1.25rem;
+  letter-spacing: 0;
+}
+.catalog-page .subject-hero-compact .back-link {
+  min-height: 2rem;
+  border: 1px solid #777;
+  padding: 0 .7rem;
+  font-size: .82rem;
+}
+.catalog-page .social-task-shell {
+  gap: .7rem;
+}
+.catalog-box {
+  border: 1px solid #a7a7d8;
+  background: white;
+  font-size: .92rem;
+}
+.catalog-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  border-bottom: 1px solid #c5c5e8;
+  background: #f1f1ff;
+  padding: .55rem .7rem;
+}
+.catalog-title-row h2 {
+  margin: 0;
+  font-family: Arial, var(--font-manrope), sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.catalog-title-row nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+.catalog-title-row nav a {
+  color: #28337a;
+  font-size: .9rem;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.catalog-title-row nav a.active {
+  color: #c0362c;
+  text-decoration: none;
+}
+.catalog-total-row {
+  display: grid;
+  grid-template-columns: 1fr 4rem;
+  align-items: center;
+  background: #b8b8ff;
+  padding: .62rem .75rem;
+  color: #111;
+  font-weight: 700;
+}
+.catalog-total-row strong,
+.catalog-main-row strong,
+.catalog-sub-row span,
+.task-picker-head strong {
+  text-align: right;
+}
+.catalog-section:nth-child(even) {
+  background: #fbfbff;
+}
+.catalog-main-row,
+.catalog-sub-row {
+  display: grid;
+  grid-template-columns: 1fr 4rem;
+  align-items: center;
+  min-height: 2rem;
+  border-top: 1px solid #eeeeee;
+  padding: .35rem .65rem;
+}
+.catalog-main-row {
+  font-weight: 700;
+}
+.catalog-main-row > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: .45rem;
+}
+.catalog-main-row a,
+.catalog-sub-row a {
+  color: #28337a;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.catalog-type-badge {
+  display: inline-grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #a9cfff;
+  color: #234;
+  font-size: .78rem;
+  font-weight: 700;
+}
+.catalog-sub-row {
+  padding-left: 2.35rem;
+  color: #222;
+  font-size: .88rem;
+}
+.task-picker {
+  border: 1px solid #9dc9c5;
+  background: #c9e5e2;
+  font-size: .9rem;
+}
+.task-picker-head {
+  display: grid;
+  grid-template-columns: 1fr 4rem;
+  align-items: center;
+  border-bottom: 1px solid #a8cbc8;
+  background: #b7d8d5;
+  padding: .55rem .7rem;
+  color: #224;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.task-picker-fields {
+  display: grid;
+  grid-template-columns: 130px minmax(180px, 1fr) minmax(200px, 1fr) 92px 92px;
+  gap: .55rem;
+  align-items: end;
+  padding: .7rem;
+}
+.task-picker label {
+  display: grid;
+  gap: .22rem;
+  color: #333;
+  font-size: .84rem;
+  font-weight: 700;
+}
+.task-picker select {
+  min-height: 2.05rem;
+  border: 1px solid #777;
+  background: white;
+  padding: 0 .45rem;
+  font: inherit;
+}
+.task-picker button,
+.task-picker a {
+  display: grid;
+  min-height: 2.05rem;
+  place-items: center;
+  border: 1px solid #39736e;
+  background: #e9fffb;
+  padding: 0 .55rem;
+  color: #123;
+  font-size: .84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.task-picker button:hover,
+.task-picker a:hover {
+  background: #154d48;
+  color: white;
+}
+.task-results {
+  display: grid;
+  gap: .55rem;
+}
+.task-row-card {
+  border: 1px solid #d0d0d0;
+  background: white;
+  font-size: .95rem;
+}
+.task-row-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  border-bottom: 1px solid #e3e3e3;
+  background: #f2f6f6;
+  padding: .48rem .65rem;
+  color: #345;
+  font-size: .78rem;
+  font-weight: 700;
+}
+.task-row-card h3 {
+  margin: 0;
+  padding: .7rem .75rem .2rem;
+  font-family: Arial, var(--font-manrope), sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.task-question {
+  margin: 0;
+  padding: .25rem .75rem .55rem;
+  font-weight: 700;
+}
+.task-row-card .task-options {
+  gap: 0;
+  padding: 0 .75rem .65rem;
+}
+.task-row-card .task-options li,
+.task-row-card .task-matching-grid p {
+  border: 0;
+  border-top: 1px solid #eeeeee;
+  padding: .36rem 0;
+}
+.task-row-card .task-options span,
+.task-row-card .task-matching-grid span {
+  color: #111;
+  font-weight: 700;
+}
+.task-row-card .task-matching-grid {
+  gap: 1rem;
+  padding: 0 .75rem .65rem;
+}
+.task-row-card .task-matching-grid h4 {
+  margin: 0 0 .25rem;
+  font-size: .9rem;
+}
+.task-answer {
+  border-top: 1px solid #d9d9d9;
+  padding: .5rem .75rem;
+  background: #fbfbfb;
+}
+.task-answer summary {
+  color: #28337a;
+  cursor: pointer;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.task-answer p {
+  margin: .45rem 0 0;
+}
+.task-source {
+  margin: 0;
+  border-top: 1px solid #ededed;
+  padding: .45rem .75rem .6rem;
+  color: #666;
+  font-size: .78rem;
+}
+.task-source a {
+  color: #28337a;
+  text-decoration: underline;
+}
+
 @media (max-width: 900px) {
   .brand-banner { font-size: .72rem; }
   .student-row { grid-template-columns: 1fr 1fr; }
   .social-task-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .task-picker-fields {
     grid-template-columns: 1fr 1fr;
   }
   .task-matching-grid {
@@ -541,8 +806,24 @@ a { color: inherit; text-decoration: none; }
   .mock-subject-panel-social-studies h2 { font-size: 1.45rem; }
   .auth-actions,
   .teacher-controls,
-  .social-task-filters {
+  .social-task-filters,
+  .task-picker-fields {
     grid-template-columns: 1fr;
+  }
+  .catalog-page .subject-hero-compact {
+    grid-template-columns: 1fr;
+  }
+  .catalog-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .catalog-main-row,
+  .catalog-sub-row,
+  .catalog-total-row {
+    grid-template-columns: 1fr 2.7rem;
+  }
+  .catalog-sub-row {
+    padding-left: .75rem;
   }
   .teacher-toolbar {
     align-items: stretch;

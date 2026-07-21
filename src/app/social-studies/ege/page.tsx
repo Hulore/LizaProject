@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "ЕГЭ по обществознан
 export default async function SocialStudiesEgePage({
   searchParams,
 }: {
-  searchParams?: Promise<{ number?: string; taskKind?: string; topic?: string }>;
+  searchParams?: Promise<{ catalogView?: string; number?: string; taskKind?: string; topic?: string }>;
 }) {
   const params = await searchParams;
   const subject = getSubject("social-studies");
@@ -18,8 +18,8 @@ export default async function SocialStudiesEgePage({
     <div className="min-h-screen bg-white text-[var(--ink)]">
       <SiteHeader />
 
-      <main className="mx-auto max-w-[1240px] px-5 py-12 sm:px-8 lg:px-10">
-        <section className="subject-hero">
+      <main className="catalog-page mx-auto max-w-[980px] px-3 py-6 sm:px-5">
+        <section className="subject-hero subject-hero-compact">
           <p>ЕГЭ</p>
           <h1>ЕГЭ по {subject.examTitle}</h1>
           <Link href="/" className="back-link">
@@ -27,7 +27,12 @@ export default async function SocialStudiesEgePage({
           </Link>
         </section>
 
-        <SocialStudiesTaskCatalog number={params?.number} taskKind={params?.taskKind} topic={params?.topic} />
+        <SocialStudiesTaskCatalog
+          catalogView={params?.catalogView}
+          number={params?.number}
+          taskKind={params?.taskKind}
+          topic={params?.topic}
+        />
       </main>
     </div>
   );

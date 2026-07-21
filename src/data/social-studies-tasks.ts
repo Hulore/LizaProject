@@ -73,7 +73,7 @@ const prototypeSource: TaskSource = {
   type: "prototype",
   name: "Собственное тестовое задание для разработки",
   catalogBasis: "Структура каталога ЕГЭ по обществознанию",
-  catalogUrl: "https://soc-ege.sdamgia.ru/prob_catalog",
+  catalogUrl: "https://soc-ege.sdamgia.ru/prob-catalog",
 };
 
 export const socialStudiesTaskKindLabels: Record<SocialStudiesTaskKind, string> = {
