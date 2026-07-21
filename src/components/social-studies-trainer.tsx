@@ -8,18 +8,34 @@ import {
   socialStudiesTopics,
   type SocialStudiesTask,
 } from "@/data/social-studies-tasks";
+import {
+  ogeSocialStudiesNumbers,
+  ogeSocialStudiesTaskKindLabels,
+  ogeSocialStudiesTasks,
+  ogeSocialStudiesTopics,
+  type OgeSocialStudiesTask,
+} from "@/data/social-studies-oge-tasks";
 import type { Exam } from "@/data/subjects";
 
 type TrainerMode = "topic" | "number" | "variant";
 type AnswerMap = Record<string, string[]>;
+type TrainerTask = SocialStudiesTask | OgeSocialStudiesTask;
 
 function shuffleTasks<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
-function isCorrect(task: SocialStudiesTask, answer: string[] | undefined) {
+function isOgeTermsTask(task: TrainerTask): task is OgeSocialStudiesTask {
+  return task.taskKind === "oge_terms_definition";
+}
+
+function isCorrect(task: TrainerTask, answer: string[] | undefined) {
   if (!answer || answer.length === 0) {
     return false;
+  }
+
+  if (isOgeTermsTask(task)) {
+    return [...task.answer.concepts].sort().join("|") === answer.map((item) => item.toLowerCase()).sort().join("|");
   }
 
   if (task.answer.orderMatters) {
@@ -29,11 +45,19 @@ function isCorrect(task: SocialStudiesTask, answer: string[] | undefined) {
   return [...task.answer.value].sort().join("|") === [...answer].sort().join("|");
 }
 
-function answerText(task: SocialStudiesTask) {
+function answerText(task: TrainerTask) {
+  if (isOgeTermsTask(task)) {
+    return task.answer.concepts.join(", ");
+  }
+
   return task.answer.value.join(task.answer.orderMatters ? "" : ", ");
 }
 
-function isAnswerComplete(task: SocialStudiesTask, answer: string[]) {
+function isAnswerComplete(task: TrainerTask, answer: string[]) {
+  if (isOgeTermsTask(task)) {
+    return answer.length === 2;
+  }
+
   if (task.answer.orderMatters) {
     return answer.filter(Boolean).length === task.answer.value.length;
   }
@@ -41,10 +65,26 @@ function isAnswerComplete(task: SocialStudiesTask, answer: string[]) {
   return answer.length >= task.answer.min && answer.length <= task.answer.max;
 }
 
-function buildVariant() {
-  return socialStudiesNumbers
+function getTaskKindLabel(task: TrainerTask) {
+  if (isOgeTermsTask(task)) {
+    return ogeSocialStudiesTaskKindLabels[task.taskKind];
+  }
+
+  return socialStudiesTaskKindLabels[task.taskKind];
+}
+
+function getSourceLabel(task: TrainerTask) {
+  if (isOgeTermsTask(task)) {
+    return `${task.source.name}, № ${task.source.sourceId}, стр. ${task.source.page}`;
+  }
+
+  return task.source.name;
+}
+
+function buildVariant(tasks: TrainerTask[], numbers: readonly number[]) {
+  return numbers
     .map((number) => {
-      const tasksByNumber = socialStudiesTasks.filter((task) => task.number === number);
+      const tasksByNumber = tasks.filter((task) => task.number === number);
 
       return shuffleTasks(tasksByNumber)[0];
     })
@@ -133,8 +173,46 @@ function TrainerQuestion({
 }: {
   answer: string[];
   onAnswer: (value: string[]) => void;
-  task: SocialStudiesTask;
+  task: TrainerTask;
 }) {
+  if (isOgeTermsTask(task)) {
+    return (
+      <>
+        <p className="trainer-task-instruction">{task.instruction}</p>
+        <div className="trainer-answer-list">
+          {task.terms.map((term) => {
+            const value = term.toLowerCase();
+            const checked = answer.includes(value);
+            const limitReached = answer.length >= 2;
+
+            return (
+              <label key={term}>
+                <input
+                  checked={checked}
+                  disabled={!checked && limitReached}
+                  onChange={() => {
+                    if (checked) {
+                      onAnswer(answer.filter((item) => item !== value));
+                      return;
+                    }
+
+                    onAnswer([...answer, value]);
+                  }}
+                  type="checkbox"
+                />
+                <span>{term}</span>
+              </label>
+            );
+          })}
+        </div>
+        <label className="trainer-definition-note">
+          Смысл одного понятия — для самопроверки
+          <textarea placeholder="Напиши определение. Автоматически сейчас проверяются только два выбранных понятия." />
+        </label>
+      </>
+    );
+  }
+
   if (task.taskKind === "social_matching") {
     return (
       <>
@@ -166,23 +244,26 @@ function TrainerQuestion({
 
 export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
   const examLabel = exam.toUpperCase();
+  const tasks = exam === "oge" ? ogeSocialStudiesTasks : socialStudiesTasks;
+  const topics = exam === "oge" ? ogeSocialStudiesTopics : socialStudiesTopics;
+  const numbers = exam === "oge" ? [...ogeSocialStudiesNumbers] : socialStudiesNumbers;
   const [mode, setMode] = useState<TrainerMode | null>(null);
-  const [selectedTopic, setSelectedTopic] = useState(socialStudiesTopics[0]);
-  const [selectedNumber, setSelectedNumber] = useState(socialStudiesNumbers[0]);
+  const [selectedTopic, setSelectedTopic] = useState(topics[0]);
+  const [selectedNumber, setSelectedNumber] = useState(numbers[0]);
   const [countByTopic, setCountByTopic] = useState(3);
   const [countByNumber, setCountByNumber] = useState(3);
-  const [activeTasks, setActiveTasks] = useState<SocialStudiesTask[]>([]);
+  const [activeTasks, setActiveTasks] = useState<TrainerTask[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [isFinished, setIsFinished] = useState(false);
 
   const topicTasks = useMemo(
-    () => socialStudiesTasks.filter((task) => task.topic === selectedTopic),
-    [selectedTopic],
+    () => tasks.filter((task) => task.topic === selectedTopic),
+    [selectedTopic, tasks],
   );
   const numberTasks = useMemo(
-    () => socialStudiesTasks.filter((task) => task.number === selectedNumber),
-    [selectedNumber],
+    () => tasks.filter((task) => task.number === selectedNumber),
+    [selectedNumber, tasks],
   );
 
   const currentTask = activeTasks[currentIndex];
@@ -191,9 +272,9 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
   const safeTopicCount = Math.min(countByTopic, Math.max(topicTasks.length, 1));
   const safeNumberCount = Math.min(countByNumber, Math.max(numberTasks.length, 1));
 
-  function startTraining(nextMode: TrainerMode, tasks: SocialStudiesTask[]) {
+  function startTraining(nextMode: TrainerMode, nextTasks: TrainerTask[]) {
     setMode(nextMode);
-    setActiveTasks(tasks);
+    setActiveTasks(nextTasks);
     setCurrentIndex(0);
     setAnswers({});
     setIsFinished(false);
@@ -226,7 +307,8 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
           <div className="trainer-task-meta">
             <span>{examLabel} №{currentTask.number}</span>
             <span>{currentTask.topic}</span>
-            <span>{socialStudiesTaskKindLabels[currentTask.taskKind]}</span>
+            <span>{getTaskKindLabel(currentTask)}</span>
+            <span>{getSourceLabel(currentTask)}</span>
           </div>
           <p className="trainer-question-text">{currentTask.question}</p>
 
@@ -301,7 +383,9 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
         <h2>Выберите формат тренировки</h2>
         <span>
           После выбора задания будут идти по одному. В конце появится результат: сколько ответов верные.
-          {exam === "oge" ? " Пока ОГЭ работает на демо-базе, отдельные задания ОГЭ добавим позже." : ""}
+          {exam === "oge"
+            ? " Для ОГЭ №1 уже подключены задания из PDF; автоматически проверяются выбранные понятия, а определение — для самопроверки."
+            : ""}
         </span>
       </div>
 
@@ -311,8 +395,8 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
           <p>Выбираем тему и количество заданий, затем решаем их подряд.</p>
           <label>
             Тема
-            <select value={selectedTopic} onChange={(event) => setSelectedTopic(event.target.value as typeof selectedTopic)}>
-              {socialStudiesTopics.map((topic) => (
+            <select value={selectedTopic} onChange={(event) => setSelectedTopic(event.target.value)}>
+              {topics.map((topic) => (
                 <option key={topic} value={topic}>
                   {topic}
                 </option>
@@ -340,7 +424,7 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
           <label>
             Номер задания
             <select value={selectedNumber} onChange={(event) => setSelectedNumber(Number(event.target.value))}>
-              {socialStudiesNumbers.map((number) => (
+              {numbers.map((number) => (
                 <option key={number} value={number}>
                   № {number}
                 </option>
@@ -366,9 +450,9 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
           <h3>3. Целый вариант</h3>
           <p>Собирается случайный вариант: по одному заданию каждого номера.</p>
           <div className="trainer-variant-count">
-            Сейчас в варианте будет заданий: <b>{socialStudiesNumbers.length}</b>
+            Сейчас в варианте будет заданий: <b>{numbers.length}</b>
           </div>
-          <button onClick={() => startTraining("variant", buildVariant())} type="button">
+          <button onClick={() => startTraining("variant", buildVariant(tasks, numbers))} type="button">
             Сгенерировать вариант
           </button>
         </article>
