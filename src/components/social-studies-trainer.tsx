@@ -164,31 +164,8 @@ function TrainerQuestion({
   return <ChoiceAnswer answer={answer} onChange={onAnswer} task={task} />;
 }
 
-function EmptyOgeTrainer() {
-  return (
-    <section className="trainer-shell">
-      <div className="trainer-head">
-        <p>Тренажёр</p>
-        <h2>Выберите формат тренировки</h2>
-        <span>Структура уже готова, но задания ОГЭ по обществознанию мы добавим отдельно.</span>
-      </div>
-
-      <div className="trainer-mode-grid">
-        {["По темам", "По заданиям", "Целый вариант"].map((title) => (
-          <article className="trainer-mode-card trainer-mode-card-disabled" key={title}>
-            <h3>{title}</h3>
-            <p>Режим появится после добавления базы ОГЭ.</p>
-            <button disabled type="button">
-              Пока недоступно
-            </button>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
+  const examLabel = exam.toUpperCase();
   const [mode, setMode] = useState<TrainerMode | null>(null);
   const [selectedTopic, setSelectedTopic] = useState(socialStudiesTopics[0]);
   const [selectedNumber, setSelectedNumber] = useState(socialStudiesNumbers[0]);
@@ -207,10 +184,6 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
     () => socialStudiesTasks.filter((task) => task.number === selectedNumber),
     [selectedNumber],
   );
-
-  if (exam === "oge") {
-    return <EmptyOgeTrainer />;
-  }
 
   const currentTask = activeTasks[currentIndex];
   const currentAnswer = currentTask ? answers[currentTask.id] ?? [] : [];
@@ -251,7 +224,7 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
 
         <article className="trainer-question-card">
           <div className="trainer-task-meta">
-            <span>ЕГЭ №{currentTask.number}</span>
+            <span>{examLabel} №{currentTask.number}</span>
             <span>{currentTask.topic}</span>
             <span>{socialStudiesTaskKindLabels[currentTask.taskKind]}</span>
           </div>
@@ -326,7 +299,10 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
       <div className="trainer-head">
         <p>Тренажёр</p>
         <h2>Выберите формат тренировки</h2>
-        <span>После выбора задания будут идти по одному. В конце появится результат: сколько ответов верные.</span>
+        <span>
+          После выбора задания будут идти по одному. В конце появится результат: сколько ответов верные.
+          {exam === "oge" ? " Пока ОГЭ работает на демо-базе, отдельные задания ОГЭ добавим позже." : ""}
+        </span>
       </div>
 
       <div className="trainer-mode-grid">
@@ -360,7 +336,7 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
 
         <article className="trainer-mode-card">
           <h3>2. По заданиям</h3>
-          <p>Выбираем номер ЕГЭ и тренируем только этот тип задания.</p>
+          <p>Выбираем номер {examLabel} и тренируем только этот тип задания.</p>
           <label>
             Номер задания
             <select value={selectedNumber} onChange={(event) => setSelectedNumber(Number(event.target.value))}>
