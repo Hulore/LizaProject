@@ -13,6 +13,7 @@ export type EgeImportedSocialStudiesTask = {
   title: string;
   question: string;
   prompt: string;
+  images?: string[];
   answer: { value: string[]; orderMatters: true; autoCheck: boolean };
   explanation: string;
   source: { name: string; sourceId: string; file: string };

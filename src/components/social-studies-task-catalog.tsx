@@ -1,3 +1,4 @@
+import Image from "next/image";
 import {
   egeImportedSocialStudiesNumbers,
   egeImportedSocialStudiesMeta,
@@ -55,9 +56,20 @@ function getTaskHref(params: { number?: number; topic?: string; taskKind?: strin
 function TaskContent({ task }: { task: EgeImportedSocialStudiesTask }) {
   return (
     <div className="trainer-imported-prompt">
-      {task.prompt.split("\n").map((line, index) =>
-        line.trim() ? <p key={`${task.id}-${index}`}>{line}</p> : <br key={`${task.id}-${index}`} />,
-      )}
+      {!task.images?.length
+        ? task.prompt
+            .split("\n")
+            .map((line, index) =>
+              line.trim() ? <p key={`${task.id}-${index}`}>{line}</p> : <br key={`${task.id}-${index}`} />,
+            )
+        : null}
+      {task.images?.length ? (
+        <div className="trainer-task-images">
+          {task.images.map((image) => (
+            <Image alt={`Изображение задания №${task.sourceId}`} height={1400} key={image} src={image} width={1100} />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

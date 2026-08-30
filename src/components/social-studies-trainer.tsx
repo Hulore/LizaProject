@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import {
   socialStudiesNumbers,
@@ -230,14 +231,23 @@ function TrainerQuestion({
   if (isImportedEgeTask(task)) {
     return (
       <>
-        <div className="trainer-imported-prompt">
-          {task.prompt.split("\n").map((line, index) =>
-            line.trim() ? <p key={`${task.id}-${index}`}>{line}</p> : <br key={`${task.id}-${index}`} />,
-          )}
-        </div>
+        {!task.images?.length ? (
+          <div className="trainer-imported-prompt">
+            {task.prompt.split("\n").map((line, index) =>
+              line.trim() ? <p key={`${task.id}-${index}`}>{line}</p> : <br key={`${task.id}-${index}`} />,
+            )}
+          </div>
+        ) : null}
+        {task.images?.length ? (
+          <div className="trainer-task-images">
+            {task.images.map((image) => (
+              <Image alt={`Изображение задания №${task.sourceId}`} height={1400} key={image} src={image} width={1100} />
+            ))}
+          </div>
+        ) : null}
         <label className="trainer-text-answer">
-          {task.answer.autoCheck ? "Ответ" : "Твой развёрнутый ответ"}
-          {task.answer.autoCheck ? (
+          {task.answer.autoCheck || task.part === 1 ? "Ответ" : "Твой развёрнутый ответ"}
+          {task.answer.autoCheck || task.part === 1 ? (
             <input
               inputMode="numeric"
               onChange={(event) => onAnswer([event.target.value])}
@@ -256,7 +266,9 @@ function TrainerQuestion({
         <p className="trainer-task-instruction">
           {task.answer.autoCheck
             ? "Вводи ответ так, как в ЕГЭ: цифры подряд без пробелов. Для заданий на выбор порядок не важен, для соответствий порядок важен."
-            : "Это задание второй части: пока оно идёт на самопроверку. Позже сюда подключим нейросеть/проверку учителем."}
+            : task.part === 1
+              ? "Для этого PDF не найден автоматический ключ, поэтому пока ответ сохраняется для самопроверки/проверки учителем."
+              : "Это задание второй части: пока оно идёт на самопроверку. Позже сюда подключим нейросеть/проверку учителем."}
         </p>
       </>
     );
@@ -530,7 +542,7 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
           После выбора задания будут идти по одному. В конце появится результат: сколько ответов верные.
           {exam === "oge"
             ? " Для ОГЭ №1 уже подключены задания из PDF; автоматически проверяются выбранные понятия, а определение — для самопроверки."
-            : " Для ЕГЭ уже подключены импортированные задания №1–8 и №10–16 из PDF; №9 отдельно добавим позже, потому что там нужны графики."}
+            : " Для ЕГЭ подключён полный импорт из папки: №1–25. Задания с цифровым ключом проверяются автоматически, развёрнутые и графики — через самопроверку."}
         </span>
         {trainerError ? <span className="trainer-error">{trainerError}</span> : null}
       </div>
