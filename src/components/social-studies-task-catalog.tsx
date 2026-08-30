@@ -56,13 +56,11 @@ function getTaskHref(params: { number?: number; topic?: string; taskKind?: strin
 function TaskContent({ task }: { task: EgeImportedSocialStudiesTask }) {
   return (
     <div className="trainer-imported-prompt">
-      {!task.images?.length
-        ? task.prompt
-            .split("\n")
-            .map((line, index) =>
-              line.trim() ? <p key={`${task.id}-${index}`}>{line}</p> : <br key={`${task.id}-${index}`} />,
-            )
-        : null}
+      {task.prompt
+        .split("\n")
+        .map((line, index) =>
+          line.trim() ? <p key={`${task.id}-${index}`}>{line}</p> : <br key={`${task.id}-${index}`} />,
+        )}
       {task.images?.length ? (
         <div className="trainer-task-images">
           {task.images.map((image) => (

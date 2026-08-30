@@ -231,13 +231,11 @@ function TrainerQuestion({
   if (isImportedEgeTask(task)) {
     return (
       <>
-        {!task.images?.length ? (
-          <div className="trainer-imported-prompt">
-            {task.prompt.split("\n").map((line, index) =>
-              line.trim() ? <p key={`${task.id}-${index}`}>{line}</p> : <br key={`${task.id}-${index}`} />,
-            )}
-          </div>
-        ) : null}
+        <div className="trainer-imported-prompt">
+          {task.prompt.split("\n").map((line, index) =>
+            line.trim() ? <p key={`${task.id}-${index}`}>{line}</p> : <br key={`${task.id}-${index}`} />,
+          )}
+        </div>
         {task.images?.length ? (
           <div className="trainer-task-images">
             {task.images.map((image) => (
