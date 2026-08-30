@@ -1,38 +1,35 @@
 import {
-  socialStudiesNumbers,
-  socialStudiesTaskKindLabels,
-  socialStudiesTasks,
-  socialStudiesTopics,
-  type SocialStudiesTask,
-  type SocialStudiesTaskKind,
-  type SocialStudiesTopic,
-} from "@/data/social-studies-tasks";
+  egeImportedSocialStudiesNumbers,
+  egeImportedSocialStudiesTasks,
+  egeImportedSocialStudiesTopics,
+  type EgeImportedSocialStudiesTask,
+} from "@/data/social-studies-ege-imported-tasks";
 
 type CatalogView = "types" | "topics";
 
 function getTaskKind(value: string | undefined) {
-  return value && value in socialStudiesTaskKindLabels ? (value as SocialStudiesTaskKind) : "";
+  return value === "ege_imported_text_answer" ? value : "";
 }
 
 function getTopic(value: string | undefined) {
-  return socialStudiesTopics.includes(value as SocialStudiesTopic) ? (value as SocialStudiesTopic) : "";
+  return value && egeImportedSocialStudiesTopics.includes(value) ? value : "";
 }
 
 function getNumber(value: string | undefined) {
   const parsed = Number(value);
 
-  return socialStudiesNumbers.includes(parsed) ? parsed : 0;
+  return egeImportedSocialStudiesNumbers.includes(parsed) ? parsed : 0;
 }
 
 function getCatalogView(value: string | undefined): CatalogView {
   return value === "topics" ? "topics" : "types";
 }
 
-function getAnswerText(task: SocialStudiesTask) {
-  return task.answer.value.join(task.answer.orderMatters ? "" : ", ");
+function getAnswerText(task: EgeImportedSocialStudiesTask) {
+  return task.answer.value.join(" или ");
 }
 
-function getTaskHref(params: { number?: number; topic?: SocialStudiesTopic; taskKind?: SocialStudiesTaskKind }) {
+function getTaskHref(params: { number?: number; topic?: string; taskKind?: string }) {
   const searchParams = new URLSearchParams();
 
   if (params.number) {
@@ -52,48 +49,22 @@ function getTaskHref(params: { number?: number; topic?: SocialStudiesTopic; task
   return query ? `/social-studies/ege?${query}#tasks` : "/social-studies/ege#tasks";
 }
 
-function TaskContent({ task }: { task: SocialStudiesTask }) {
-  if (task.taskKind === "social_matching") {
-    return (
-      <div className="task-matching-grid">
-        <div>
-          <h4>Левый столбец</h4>
-          {task.content.leftColumn.map((item) => (
-            <p key={item.id}>
-              <span>{item.id}</span> {item.text}
-            </p>
-          ))}
-        </div>
-
-        <div>
-          <h4>Правый столбец</h4>
-          {task.content.rightColumn.map((item) => (
-            <p key={item.id}>
-              <span>{item.id}</span> {item.text}
-            </p>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
+function TaskContent({ task }: { task: EgeImportedSocialStudiesTask }) {
   return (
-    <ol className="task-options">
-      {task.content.options.map((option) => (
-        <li key={option.id}>
-          <span>{option.id})</span> {option.text}
-        </li>
-      ))}
-    </ol>
+    <div className="trainer-imported-prompt">
+      {task.prompt.split("\n").map((line, index) =>
+        line.trim() ? <p key={`${task.id}-${index}`}>{line}</p> : <br key={`${task.id}-${index}`} />,
+      )}
+    </div>
   );
 }
 
 function NumberCatalog() {
   return (
     <div className="catalog-table" aria-label="Каталог заданий по номерам ЕГЭ">
-      {socialStudiesNumbers.map((number) => {
-        const numberTasks = socialStudiesTasks.filter((task) => task.number === number);
-        const kinds = Array.from(new Set(numberTasks.map((task) => task.taskKind)));
+      {egeImportedSocialStudiesNumbers.map((number) => {
+        const numberTasks = egeImportedSocialStudiesTasks.filter((task) => task.number === number);
+        const kinds = Array.from(new Set(numberTasks.map((task) => task.taskKindLabel)));
 
         return (
           <div className="catalog-section" key={number}>
@@ -106,11 +77,11 @@ function NumberCatalog() {
             </div>
 
             {kinds.map((kind) => {
-              const count = numberTasks.filter((task) => task.taskKind === kind).length;
+              const count = numberTasks.filter((task) => task.taskKindLabel === kind).length;
 
               return (
                 <div className="catalog-sub-row" key={kind}>
-                  <a href={getTaskHref({ number, taskKind: kind })}>{socialStudiesTaskKindLabels[kind]}</a>
+                  <a href={getTaskHref({ number, taskKind: "ege_imported_text_answer" })}>{kind}</a>
                   <span>{count}</span>
                 </div>
               );
@@ -125,8 +96,8 @@ function NumberCatalog() {
 function TopicCatalog() {
   return (
     <div className="catalog-table" aria-label="Каталог заданий по темам">
-      {socialStudiesTopics.map((topic, index) => {
-        const topicTasks = socialStudiesTasks.filter((task) => task.topic === topic);
+      {egeImportedSocialStudiesTopics.map((topic, index) => {
+        const topicTasks = egeImportedSocialStudiesTasks.filter((task) => task.topic === topic);
         const numbers = Array.from(new Set(topicTasks.map((task) => task.number))).sort((a, b) => a - b);
 
         return (
@@ -174,7 +145,7 @@ export function SocialStudiesTaskCatalog({
   const selectedTaskKind = getTaskKind(taskKind);
   const selectedCatalogView = getCatalogView(catalogView);
 
-  const visibleTasks = socialStudiesTasks.filter((task) => {
+  const visibleTasks = egeImportedSocialStudiesTasks.filter((task) => {
     if (selectedNumber && task.number !== selectedNumber) {
       return false;
     }
@@ -207,7 +178,7 @@ export function SocialStudiesTaskCatalog({
 
         <div className="catalog-total-row">
           <span>Всего заданий в каталоге</span>
-          <strong>{socialStudiesTasks.length}</strong>
+          <strong>{egeImportedSocialStudiesTasks.length}</strong>
         </div>
 
         {selectedCatalogView === "topics" ? <TopicCatalog /> : <NumberCatalog />}
@@ -224,7 +195,7 @@ export function SocialStudiesTaskCatalog({
             Номер задания
             <select name="number" defaultValue={selectedNumber || ""}>
               <option value="">любой</option>
-              {socialStudiesNumbers.map((item) => (
+              {egeImportedSocialStudiesNumbers.map((item) => (
                 <option key={item} value={item}>
                   № {item}
                 </option>
@@ -236,7 +207,7 @@ export function SocialStudiesTaskCatalog({
             Тема
             <select name="topic" defaultValue={selectedTopic}>
               <option value="">любая</option>
-              {socialStudiesTopics.map((item) => (
+              {egeImportedSocialStudiesTopics.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
@@ -248,11 +219,7 @@ export function SocialStudiesTaskCatalog({
             Тип ответа
             <select name="taskKind" defaultValue={selectedTaskKind}>
               <option value="">любой</option>
-              {Object.entries(socialStudiesTaskKindLabels).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
+              <option value="ege_imported_text_answer">Ответ цифрами</option>
             </select>
           </label>
 
@@ -262,13 +229,13 @@ export function SocialStudiesTaskCatalog({
       </form>
 
       <div className="task-results" id="tasks">
-        {visibleTasks.map((task) => (
+        {visibleTasks.slice(0, 50).map((task) => (
           <article key={task.id} className="task-row-card">
             <div className="task-row-info">
-              <span>Номер: {task.id.replace("social-ege-", "").toUpperCase()}</span>
+              <span>Номер источника: {task.sourceId}</span>
               <span>ЕГЭ №{task.number}</span>
               <span>{task.topic}</span>
-              <span>{socialStudiesTaskKindLabels[task.taskKind]}</span>
+              <span>{task.taskKindLabel}</span>
             </div>
 
             <h3>{task.title}</h3>
@@ -285,14 +252,13 @@ export function SocialStudiesTaskCatalog({
             </details>
 
             <p className="task-source">
-              Источник текста: {task.source.name}. Основа классификации:{" "}
-              <a href={task.source.catalogUrl} target="_blank" rel="noreferrer">
-                {task.source.catalogBasis}
-              </a>
-              .
+              Источник: {task.source.name}, № {task.source.sourceId}. Файл импорта: {task.source.file}.
             </p>
           </article>
         ))}
+        {visibleTasks.length > 50 ? (
+          <p className="task-source">Показаны первые 50 заданий из {visibleTasks.length}. Чтобы сузить список, выбери номер или тему выше.</p>
+        ) : null}
       </div>
     </section>
   );

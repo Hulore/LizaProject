@@ -13,5 +13,6 @@ test("EGE social studies trainer starts", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Выберите формат тренировки" })).toBeVisible();
   await page.getByRole("button", { name: "Начать" }).first().click();
   await expect(page.getByText(/Задание 1 из/)).toBeVisible();
-  await expect(page.locator(".trainer-question-card").getByText(/Выберите два признака/)).toBeVisible();
+  await expect(page.locator(".trainer-question-card").getByText(/Задание ЕГЭ №/)).toBeVisible();
+  await expect(page.locator(".trainer-question-card").getByLabel("Ответ")).toBeVisible();
 });

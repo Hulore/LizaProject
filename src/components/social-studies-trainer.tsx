@@ -9,6 +9,12 @@ import {
   type SocialStudiesTask,
 } from "@/data/social-studies-tasks";
 import {
+  egeImportedSocialStudiesNumbers,
+  egeImportedSocialStudiesMeta,
+  egeImportedSocialStudiesTopics,
+} from "@/data/social-studies-ege-imported-meta";
+import type { EgeImportedSocialStudiesTask } from "@/data/social-studies-ege-imported-tasks";
+import {
   ogeSocialStudiesNumbers,
   ogeSocialStudiesTaskKindLabels,
   ogeSocialStudiesTasks,
@@ -19,7 +25,7 @@ import type { Exam } from "@/data/subjects";
 
 type TrainerMode = "topic" | "number" | "variant";
 type AnswerMap = Record<string, string[]>;
-type TrainerTask = SocialStudiesTask | OgeSocialStudiesTask;
+type TrainerTask = SocialStudiesTask | OgeSocialStudiesTask | EgeImportedSocialStudiesTask;
 
 function shuffleTasks<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
@@ -29,9 +35,35 @@ function isOgeTermsTask(task: TrainerTask): task is OgeSocialStudiesTask {
   return task.taskKind === "oge_terms_definition";
 }
 
+function isImportedEgeTask(task: TrainerTask): task is EgeImportedSocialStudiesTask {
+  return task.taskKind === "ege_imported_text_answer";
+}
+
+function normalizeTextAnswer(value: string) {
+  return value.replace(/[\s,.;:-]/g, "").toLowerCase();
+}
+
+function isImportedOrderSensitive(task: EgeImportedSocialStudiesTask) {
+  return [3, 6, 13, 14, 15].includes(task.number);
+}
+
 function isCorrect(task: TrainerTask, answer: string[] | undefined) {
   if (!answer || answer.length === 0) {
     return false;
+  }
+
+  if (isImportedEgeTask(task)) {
+    const studentAnswer = normalizeTextAnswer(answer[0] ?? "");
+
+    return task.answer.value.some((correctAnswer) => {
+      const normalizedCorrectAnswer = normalizeTextAnswer(correctAnswer);
+
+      if (isImportedOrderSensitive(task)) {
+        return normalizedCorrectAnswer === studentAnswer;
+      }
+
+      return [...normalizedCorrectAnswer].sort().join("") === [...studentAnswer].sort().join("");
+    });
   }
 
   if (isOgeTermsTask(task)) {
@@ -46,6 +78,10 @@ function isCorrect(task: TrainerTask, answer: string[] | undefined) {
 }
 
 function answerText(task: TrainerTask) {
+  if (isImportedEgeTask(task)) {
+    return task.answer.value.join(" или ");
+  }
+
   if (isOgeTermsTask(task)) {
     return task.answer.concepts.join(", ");
   }
@@ -54,6 +90,10 @@ function answerText(task: TrainerTask) {
 }
 
 function isAnswerComplete(task: TrainerTask, answer: string[]) {
+  if (isImportedEgeTask(task)) {
+    return Boolean(answer[0]?.trim());
+  }
+
   if (isOgeTermsTask(task)) {
     return answer.length === 2;
   }
@@ -66,6 +106,10 @@ function isAnswerComplete(task: TrainerTask, answer: string[]) {
 }
 
 function getTaskKindLabel(task: TrainerTask) {
+  if (isImportedEgeTask(task)) {
+    return task.taskKindLabel;
+  }
+
   if (isOgeTermsTask(task)) {
     return ogeSocialStudiesTaskKindLabels[task.taskKind];
   }
@@ -74,6 +118,10 @@ function getTaskKindLabel(task: TrainerTask) {
 }
 
 function getSourceLabel(task: TrainerTask) {
+  if (isImportedEgeTask(task)) {
+    return `${task.source.name}, № ${task.source.sourceId}`;
+  }
+
   if (isOgeTermsTask(task)) {
     return `${task.source.name}, № ${task.source.sourceId}, стр. ${task.source.page}`;
   }
@@ -175,6 +223,32 @@ function TrainerQuestion({
   onAnswer: (value: string[]) => void;
   task: TrainerTask;
 }) {
+  if (isImportedEgeTask(task)) {
+    return (
+      <>
+        <div className="trainer-imported-prompt">
+          {task.prompt.split("\n").map((line, index) =>
+            line.trim() ? <p key={`${task.id}-${index}`}>{line}</p> : <br key={`${task.id}-${index}`} />,
+          )}
+        </div>
+        <label className="trainer-text-answer">
+          Ответ
+          <input
+            inputMode="numeric"
+            onChange={(event) => onAnswer([event.target.value])}
+            placeholder="Например: 245 или 31212"
+            type="text"
+            value={answer[0] ?? ""}
+          />
+        </label>
+        <p className="trainer-task-instruction">
+          Вводи ответ так, как в ЕГЭ: цифры подряд без пробелов. Для заданий на выбор порядок не важен, для
+          соответствий порядок важен.
+        </p>
+      </>
+    );
+  }
+
   if (isOgeTermsTask(task)) {
     return (
       <>
@@ -244,9 +318,10 @@ function TrainerQuestion({
 
 export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
   const examLabel = exam.toUpperCase();
-  const tasks = exam === "oge" ? ogeSocialStudiesTasks : socialStudiesTasks;
-  const topics = exam === "oge" ? ogeSocialStudiesTopics : socialStudiesTopics;
-  const numbers = exam === "oge" ? [...ogeSocialStudiesNumbers] : socialStudiesNumbers;
+  const tasks: TrainerTask[] = exam === "oge" ? ogeSocialStudiesTasks : socialStudiesTasks;
+  const topics = exam === "oge" ? ogeSocialStudiesTopics : egeImportedSocialStudiesTopics.length ? egeImportedSocialStudiesTopics : socialStudiesTopics;
+  const numbers =
+    exam === "oge" ? [...ogeSocialStudiesNumbers] : egeImportedSocialStudiesNumbers.length ? egeImportedSocialStudiesNumbers : socialStudiesNumbers;
   const [mode, setMode] = useState<TrainerMode | null>(null);
   const [selectedTopic, setSelectedTopic] = useState(topics[0]);
   const [selectedNumber, setSelectedNumber] = useState(numbers[0]);
@@ -256,6 +331,8 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [isFinished, setIsFinished] = useState(false);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+  const [trainerError, setTrainerError] = useState("");
 
   const topicTasks = useMemo(
     () => tasks.filter((task) => task.topic === selectedTopic),
@@ -269,8 +346,16 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
   const currentTask = activeTasks[currentIndex];
   const currentAnswer = currentTask ? answers[currentTask.id] ?? [] : [];
   const correctCount = activeTasks.filter((task) => isCorrect(task, answers[task.id])).length;
-  const safeTopicCount = Math.min(countByTopic, Math.max(topicTasks.length, 1));
-  const safeNumberCount = Math.min(countByNumber, Math.max(numberTasks.length, 1));
+  const selectedTopicTotal =
+    exam === "ege"
+      ? egeImportedSocialStudiesMeta.countsByTopic[selectedTopic as keyof typeof egeImportedSocialStudiesMeta.countsByTopic] ?? 0
+      : topicTasks.length;
+  const selectedNumberTotal =
+    exam === "ege"
+      ? egeImportedSocialStudiesMeta.countsByNumber[String(selectedNumber) as keyof typeof egeImportedSocialStudiesMeta.countsByNumber] ?? 0
+      : numberTasks.length;
+  const safeTopicCount = Math.min(countByTopic, Math.max(selectedTopicTotal, 1));
+  const safeNumberCount = Math.min(countByNumber, Math.max(selectedNumberTotal, 1));
 
   function startTraining(nextMode: TrainerMode, nextTasks: TrainerTask[]) {
     setMode(nextMode);
@@ -278,6 +363,45 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
     setCurrentIndex(0);
     setAnswers({});
     setIsFinished(false);
+    setTrainerError("");
+  }
+
+  async function startEgeTraining(nextMode: TrainerMode) {
+    setIsLoadingTasks(true);
+    setTrainerError("");
+
+    const searchParams = new URLSearchParams({ mode: nextMode });
+
+    if (nextMode === "topic") {
+      searchParams.set("topic", selectedTopic);
+      searchParams.set("count", String(safeTopicCount));
+    }
+
+    if (nextMode === "number") {
+      searchParams.set("number", String(selectedNumber));
+      searchParams.set("count", String(safeNumberCount));
+    }
+
+    try {
+      const response = await fetch(`/api/social-studies/ege-tasks?${searchParams.toString()}`);
+
+      if (!response.ok) {
+        throw new Error("Не удалось загрузить задания");
+      }
+
+      const data = (await response.json()) as { tasks: EgeImportedSocialStudiesTask[] };
+
+      if (!data.tasks.length) {
+        setTrainerError("Для этого выбора пока нет заданий.");
+        return;
+      }
+
+      startTraining(nextMode, data.tasks);
+    } catch {
+      setTrainerError("Не получилось загрузить задания. Попробуй ещё раз.");
+    } finally {
+      setIsLoadingTasks(false);
+    }
   }
 
   function resetTraining() {
@@ -286,6 +410,7 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
     setCurrentIndex(0);
     setAnswers({});
     setIsFinished(false);
+    setTrainerError("");
   }
 
   if (mode && currentTask && !isFinished) {
@@ -385,8 +510,9 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
           После выбора задания будут идти по одному. В конце появится результат: сколько ответов верные.
           {exam === "oge"
             ? " Для ОГЭ №1 уже подключены задания из PDF; автоматически проверяются выбранные понятия, а определение — для самопроверки."
-            : ""}
+            : " Для ЕГЭ уже подключены импортированные задания №1–8 и №10–16 из PDF; №9 отдельно добавим позже, потому что там нужны графики."}
         </span>
+        {trainerError ? <span className="trainer-error">{trainerError}</span> : null}
       </div>
 
       <div className="trainer-mode-grid">
@@ -406,15 +532,19 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
           <label>
             Сколько заданий
             <select value={safeTopicCount} onChange={(event) => setCountByTopic(Number(event.target.value))}>
-              {Array.from({ length: Math.max(topicTasks.length, 1) }, (_, index) => index + 1).map((count) => (
+              {Array.from({ length: Math.max(selectedTopicTotal, 1) }, (_, index) => index + 1).map((count) => (
                 <option key={count} value={count}>
                   {count}
                 </option>
               ))}
             </select>
           </label>
-          <button onClick={() => startTraining("topic", topicTasks.slice(0, safeTopicCount))} type="button">
-            Начать
+          <button
+            disabled={isLoadingTasks}
+            onClick={() => (exam === "ege" ? startEgeTraining("topic") : startTraining("topic", topicTasks.slice(0, safeTopicCount)))}
+            type="button"
+          >
+            {isLoadingTasks ? "Загружаю..." : "Начать"}
           </button>
         </article>
 
@@ -434,15 +564,21 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
           <label>
             Сколько заданий
             <select value={safeNumberCount} onChange={(event) => setCountByNumber(Number(event.target.value))}>
-              {Array.from({ length: Math.max(numberTasks.length, 1) }, (_, index) => index + 1).map((count) => (
+              {Array.from({ length: Math.max(selectedNumberTotal, 1) }, (_, index) => index + 1).map((count) => (
                 <option key={count} value={count}>
                   {count}
                 </option>
               ))}
             </select>
           </label>
-          <button onClick={() => startTraining("number", numberTasks.slice(0, safeNumberCount))} type="button">
-            Начать
+          <button
+            disabled={isLoadingTasks}
+            onClick={() =>
+              exam === "ege" ? startEgeTraining("number") : startTraining("number", numberTasks.slice(0, safeNumberCount))
+            }
+            type="button"
+          >
+            {isLoadingTasks ? "Загружаю..." : "Начать"}
           </button>
         </article>
 
@@ -452,8 +588,12 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
           <div className="trainer-variant-count">
             Сейчас в варианте будет заданий: <b>{numbers.length}</b>
           </div>
-          <button onClick={() => startTraining("variant", buildVariant(tasks, numbers))} type="button">
-            Сгенерировать вариант
+          <button
+            disabled={isLoadingTasks}
+            onClick={() => (exam === "ege" ? startEgeTraining("variant") : startTraining("variant", buildVariant(tasks, numbers)))}
+            type="button"
+          >
+            {isLoadingTasks ? "Загружаю..." : "Сгенерировать вариант"}
           </button>
         </article>
       </div>
