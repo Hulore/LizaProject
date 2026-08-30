@@ -1,14 +1,17 @@
 import {
   egeImportedSocialStudiesNumbers,
-  egeImportedSocialStudiesTasks,
+  egeImportedSocialStudiesMeta,
   egeImportedSocialStudiesTopics,
+} from "@/data/social-studies-ege-imported-meta";
+import {
+  egeImportedSocialStudiesTasks,
   type EgeImportedSocialStudiesTask,
 } from "@/data/social-studies-ege-imported-tasks";
 
 type CatalogView = "types" | "topics";
 
 function getTaskKind(value: string | undefined) {
-  return value === "ege_imported_text_answer" ? value : "";
+  return value === "ege_imported_text_answer" || value === "ege_imported_free_answer" ? value : "";
 }
 
 function getTopic(value: string | undefined) {
@@ -26,7 +29,7 @@ function getCatalogView(value: string | undefined): CatalogView {
 }
 
 function getAnswerText(task: EgeImportedSocialStudiesTask) {
-  return task.answer.value.join(" или ");
+  return task.answer.autoCheck ? task.answer.value.join(" или ") : "автоматического ответа нет — смотри пояснение/критерии";
 }
 
 function getTaskHref(params: { number?: number; topic?: string; taskKind?: string }) {
@@ -63,29 +66,39 @@ function NumberCatalog() {
   return (
     <div className="catalog-table" aria-label="Каталог заданий по номерам ЕГЭ">
       {egeImportedSocialStudiesNumbers.map((number) => {
-        const numberTasks = egeImportedSocialStudiesTasks.filter((task) => task.number === number);
-        const kinds = Array.from(new Set(numberTasks.map((task) => task.taskKindLabel)));
+        const numberTasksCount = egeImportedSocialStudiesMeta.countsByNumber[String(number) as keyof typeof egeImportedSocialStudiesMeta.countsByNumber] ?? 0;
+        const numberTitle =
+          egeImportedSocialStudiesMeta.titlesByNumber[String(number) as keyof typeof egeImportedSocialStudiesMeta.titlesByNumber] ??
+          "Задания ЕГЭ по обществознанию";
+        const kinds =
+          egeImportedSocialStudiesMeta.countsByNumberAndKind[
+            String(number) as keyof typeof egeImportedSocialStudiesMeta.countsByNumberAndKind
+          ] ?? {};
 
         return (
           <div className="catalog-section" key={number}>
             <div className="catalog-main-row">
               <div>
                 <span className="catalog-type-badge">Т</span>
-                <a href={getTaskHref({ number })}>№ {number}. Задания ЕГЭ по обществознанию</a>
+                <a href={getTaskHref({ number })}>
+                  {number}. {numberTitle}
+                </a>
               </div>
-              <strong>{numberTasks.length}</strong>
+              <strong>{numberTasksCount}</strong>
+              <a className="catalog-go-link" href={getTaskHref({ number })}>
+                Перейти
+              </a>
             </div>
 
-            {kinds.map((kind) => {
-              const count = numberTasks.filter((task) => task.taskKindLabel === kind).length;
-
-              return (
-                <div className="catalog-sub-row" key={kind}>
-                  <a href={getTaskHref({ number, taskKind: "ege_imported_text_answer" })}>{kind}</a>
-                  <span>{count}</span>
-                </div>
-              );
-            })}
+            {Object.entries(kinds).map(([kind, count]) => (
+              <div className="catalog-sub-row" key={kind}>
+                <a href={getTaskHref({ number })}>{kind}</a>
+                <span>{count}</span>
+                <a className="catalog-go-link" href={getTaskHref({ number })}>
+                  Перейти
+                </a>
+              </div>
+            ))}
           </div>
         );
       })}
@@ -97,6 +110,7 @@ function TopicCatalog() {
   return (
     <div className="catalog-table" aria-label="Каталог заданий по темам">
       {egeImportedSocialStudiesTopics.map((topic, index) => {
+        const topicTasksCount = egeImportedSocialStudiesMeta.countsByTopic[topic as keyof typeof egeImportedSocialStudiesMeta.countsByTopic] ?? 0;
         const topicTasks = egeImportedSocialStudiesTasks.filter((task) => task.topic === topic);
         const numbers = Array.from(new Set(topicTasks.map((task) => task.number))).sort((a, b) => a - b);
 
@@ -109,7 +123,10 @@ function TopicCatalog() {
                   {index + 1}. {topic}
                 </a>
               </div>
-              <strong>{topicTasks.length}</strong>
+              <strong>{topicTasksCount}</strong>
+              <a className="catalog-go-link" href={getTaskHref({ topic })}>
+                Перейти
+              </a>
             </div>
 
             {numbers.map((number) => {
@@ -119,6 +136,9 @@ function TopicCatalog() {
                 <div className="catalog-sub-row" key={number}>
                   <a href={getTaskHref({ topic, number })}>Задание № {number}</a>
                   <span>{count}</span>
+                  <a className="catalog-go-link" href={getTaskHref({ topic, number })}>
+                    Перейти
+                  </a>
                 </div>
               );
             })}
@@ -178,7 +198,7 @@ export function SocialStudiesTaskCatalog({
 
         <div className="catalog-total-row">
           <span>Всего заданий в каталоге</span>
-          <strong>{egeImportedSocialStudiesTasks.length}</strong>
+          <strong>{egeImportedSocialStudiesMeta.total}</strong>
         </div>
 
         {selectedCatalogView === "topics" ? <TopicCatalog /> : <NumberCatalog />}
@@ -220,6 +240,7 @@ export function SocialStudiesTaskCatalog({
             <select name="taskKind" defaultValue={selectedTaskKind}>
               <option value="">любой</option>
               <option value="ege_imported_text_answer">Ответ цифрами</option>
+              <option value="ege_imported_free_answer">Свободный ответ</option>
             </select>
           </label>
 

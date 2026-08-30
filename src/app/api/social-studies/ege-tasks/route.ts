@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { egeImportedSocialStudiesNumbers } from "@/data/social-studies-ege-imported-meta";
 import {
-  egeImportedSocialStudiesNumbers,
   egeImportedSocialStudiesTasks,
   type EgeImportedSocialStudiesTask,
 } from "@/data/social-studies-ege-imported-tasks";

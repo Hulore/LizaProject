@@ -36,7 +36,7 @@ function isOgeTermsTask(task: TrainerTask): task is OgeSocialStudiesTask {
 }
 
 function isImportedEgeTask(task: TrainerTask): task is EgeImportedSocialStudiesTask {
-  return task.taskKind === "ege_imported_text_answer";
+  return task.taskKind === "ege_imported_text_answer" || task.taskKind === "ege_imported_free_answer";
 }
 
 function normalizeTextAnswer(value: string) {
@@ -53,6 +53,10 @@ function isCorrect(task: TrainerTask, answer: string[] | undefined) {
   }
 
   if (isImportedEgeTask(task)) {
+    if (!task.answer.autoCheck) {
+      return false;
+    }
+
     const studentAnswer = normalizeTextAnswer(answer[0] ?? "");
 
     return task.answer.value.some((correctAnswer) => {
@@ -79,7 +83,7 @@ function isCorrect(task: TrainerTask, answer: string[] | undefined) {
 
 function answerText(task: TrainerTask) {
   if (isImportedEgeTask(task)) {
-    return task.answer.value.join(" или ");
+    return task.answer.autoCheck ? task.answer.value.join(" или ") : "автоматического ответа нет — смотри пояснение/критерии";
   }
 
   if (isOgeTermsTask(task)) {
@@ -232,18 +236,27 @@ function TrainerQuestion({
           )}
         </div>
         <label className="trainer-text-answer">
-          Ответ
-          <input
-            inputMode="numeric"
-            onChange={(event) => onAnswer([event.target.value])}
-            placeholder="Например: 245 или 31212"
-            type="text"
-            value={answer[0] ?? ""}
-          />
+          {task.answer.autoCheck ? "Ответ" : "Твой развёрнутый ответ"}
+          {task.answer.autoCheck ? (
+            <input
+              inputMode="numeric"
+              onChange={(event) => onAnswer([event.target.value])}
+              placeholder="Например: 245 или 31212"
+              type="text"
+              value={answer[0] ?? ""}
+            />
+          ) : (
+            <textarea
+              onChange={(event) => onAnswer([event.target.value])}
+              placeholder="Напиши ответ. В конце откроется пояснение/критерии для самопроверки."
+              value={answer[0] ?? ""}
+            />
+          )}
         </label>
         <p className="trainer-task-instruction">
-          Вводи ответ так, как в ЕГЭ: цифры подряд без пробелов. Для заданий на выбор порядок не важен, для
-          соответствий порядок важен.
+          {task.answer.autoCheck
+            ? "Вводи ответ так, как в ЕГЭ: цифры подряд без пробелов. Для заданий на выбор порядок не важен, для соответствий порядок важен."
+            : "Это задание второй части: пока оно идёт на самопроверку. Позже сюда подключим нейросеть/проверку учителем."}
         </p>
       </>
     );
@@ -345,7 +358,8 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
 
   const currentTask = activeTasks[currentIndex];
   const currentAnswer = currentTask ? answers[currentTask.id] ?? [] : [];
-  const correctCount = activeTasks.filter((task) => isCorrect(task, answers[task.id])).length;
+  const autoCheckedTasks = activeTasks.filter((task) => !isImportedEgeTask(task) || task.answer.autoCheck);
+  const correctCount = autoCheckedTasks.filter((task) => isCorrect(task, answers[task.id])).length;
   const selectedTopicTotal =
     exam === "ege"
       ? egeImportedSocialStudiesMeta.countsByTopic[selectedTopic as keyof typeof egeImportedSocialStudiesMeta.countsByTopic] ?? 0
@@ -473,17 +487,23 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
         <div className="trainer-result-card">
           <p>Результат</p>
           <h2>
-            {correctCount} из {activeTasks.length}
+            {correctCount} из {autoCheckedTasks.length}
           </h2>
           <span>
-            Правильных ответов: {activeTasks.length ? Math.round((correctCount / activeTasks.length) * 100) : 0}%
+            Автоматически проверено: {autoCheckedTasks.length} из {activeTasks.length}. Правильных ответов:{" "}
+            {autoCheckedTasks.length ? Math.round((correctCount / autoCheckedTasks.length) * 100) : 0}%
           </span>
 
           <div className="trainer-result-list">
             {activeTasks.map((task, index) => (
               <details key={task.id}>
                 <summary>
-                  {index + 1}. {task.title} — {isCorrect(task, answers[task.id]) ? "верно" : "ошибка"}
+                  {index + 1}. {task.title} —{" "}
+                  {isImportedEgeTask(task) && !task.answer.autoCheck
+                    ? "самопроверка"
+                    : isCorrect(task, answers[task.id])
+                      ? "верно"
+                      : "ошибка"}
                 </summary>
                 <p>
                   <b>Правильный ответ:</b> {answerText(task)}
