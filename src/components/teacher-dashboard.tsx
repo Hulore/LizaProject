@@ -1,42 +1,57 @@
-"use client";
-
-import { useMemo, useState } from "react";
+import type { Invitation } from "@/data/invitations";
 import type { Student } from "@/data/students";
 
-type SortKey = "name" | "averageScore" | "completedTasks";
+export type StudentSortKey = "name" | "averageScore" | "completedTasks";
 
-const sortLabels: Record<SortKey, string> = {
+const sortLabels: Record<StudentSortKey, string> = {
   name: "по имени",
   averageScore: "по баллам",
   completedTasks: "по заданиям",
 };
 
-export function TeacherDashboard({ students }: { students: Student[] }) {
-  const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("name");
+function getVisibleStudents(students: Student[], query: string, sortKey: StudentSortKey) {
+  const normalizedQuery = query.trim().toLowerCase();
 
-  const visibleStudents = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  return students
+    .filter((student) => {
+      if (!normalizedQuery) {
+        return true;
+      }
 
-    return students
-      .filter((student) => {
-        if (!normalizedQuery) {
-          return true;
-        }
+      return [student.name, student.login, student.inviteCode, ...student.subjects, ...student.exams]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedQuery);
+    })
+    .sort((first, second) => {
+      if (sortKey === "name") {
+        return first.name.localeCompare(second.name, "ru");
+      }
 
-        return [student.name, student.login, student.inviteCode, ...student.subjects, ...student.exams]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedQuery);
-      })
-      .sort((first, second) => {
-        if (sortKey === "name") {
-          return first.name.localeCompare(second.name, "ru");
-        }
+      return second[sortKey] - first[sortKey];
+    });
+}
 
-        return second[sortKey] - first[sortKey];
-      });
-  }, [query, sortKey, students]);
+export function TeacherDashboard({
+  copiedInvite,
+  createInvitationAction,
+  createdInviteCode,
+  createdInviteUrl,
+  invitations,
+  query,
+  sortKey,
+  students,
+}: {
+  copiedInvite?: boolean;
+  createInvitationAction: () => Promise<void>;
+  createdInviteCode?: string;
+  createdInviteUrl?: string;
+  invitations: Invitation[];
+  query: string;
+  sortKey: StudentSortKey;
+  students: Student[];
+}) {
+  const visibleStudents = getVisibleStudents(students, query, sortKey);
 
   return (
     <section className="teacher-shell">
@@ -46,24 +61,48 @@ export function TeacherDashboard({ students }: { students: Student[] }) {
           <h1>Список учеников</h1>
         </div>
 
-        <button type="button" className="invite-button">
-          Создать приглашение
-        </button>
+        <form action={createInvitationAction} className="create-invite-box">
+          <button type="submit" className="invite-button">
+            Создать приглашение
+          </button>
+          <small>Каждое нажатие удаляет старую свободную ссылку и создаёт новую.</small>
+        </form>
       </div>
 
-      <div className="teacher-controls">
+      {createdInviteCode && createdInviteUrl ? (
+        <div className="invite-result">
+          <span>Новое приглашение</span>
+          <a href={createdInviteUrl}>{createdInviteUrl}</a>
+          {copiedInvite ? <small>Ссылка уже в буфере. Можно вставлять в чат или Блокнот.</small> : null}
+        </div>
+      ) : null}
+
+      <div className="invite-list">
+        {invitations.map((invitation) => (
+          <a
+            key={invitation.code}
+            className={invitation.isUsed ? "invite-chip invite-chip-used" : "invite-chip"}
+            href={`/register/${invitation.code}`}
+          >
+            <span>{invitation.code}</span>
+            <small>{invitation.isUsed ? "использовано" : "свободно"} · {invitation.createdAt}</small>
+          </a>
+        ))}
+      </div>
+
+      <form className="teacher-controls" method="get" action="/teacher">
         <label>
           <span>Поиск</span>
           <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            defaultValue={query}
+            name="q"
             placeholder="Имя, логин, предмет, код"
           />
         </label>
 
         <label>
           <span>Сортировка</span>
-          <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
+          <select name="sort" defaultValue={sortKey}>
             {Object.entries(sortLabels).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
@@ -71,7 +110,14 @@ export function TeacherDashboard({ students }: { students: Student[] }) {
             ))}
           </select>
         </label>
-      </div>
+
+        <button type="submit">Применить</button>
+        <a href="/teacher">Сбросить</a>
+      </form>
+
+      <p className="student-list-summary">
+        Показано учеников: {visibleStudents.length} из {students.length}
+      </p>
 
       <div className="student-list">
         {visibleStudents.map((student) => (

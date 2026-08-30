@@ -1,18 +1,62 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { SiteHeader } from "@/components/site-header";
-import { TeacherDashboard } from "@/components/teacher-dashboard";
-import { students } from "@/data/students";
+import { TeacherDashboard, type StudentSortKey } from "@/components/teacher-dashboard";
+import { getRecentInvitations } from "@/data/invitations";
+import { getStudentsForTeacher } from "@/data/students";
+import { requireTeacherSession } from "@/lib/auth";
+import { logoutAction } from "../login/actions";
+import { createTeacherInvitationAction } from "./actions";
 
-export default function TeacherPage() {
+function getSortKey(value: string | undefined): StudentSortKey {
+  if (value === "averageScore" || value === "completedTasks") {
+    return value;
+  }
+
+  return "name";
+}
+
+export default async function TeacherPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ copied?: string; invite?: string; q?: string; sort?: string }>;
+}) {
+  await requireTeacherSession();
+  const params = await searchParams;
+  const requestHeaders = await headers();
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
+  const host = requestHeaders.get("host") ?? "localhost:3000";
+  const createdInviteUrl = params?.invite ? `${protocol}://${host}/register/${params.invite}` : undefined;
+  const query = String(params?.q ?? "").trim();
+  const sortKey = getSortKey(params?.sort);
+  const students = await getStudentsForTeacher();
+  const invitations = await getRecentInvitations();
+
   return (
     <div className="min-h-screen bg-white text-[var(--ink)]">
       <SiteHeader />
 
       <main className="mx-auto max-w-[1240px] px-5 py-12 sm:px-8 lg:px-10">
-        <Link href="/" className="back-link">
-          На главную
-        </Link>
-        <TeacherDashboard students={students} />
+        <div className="teacher-page-actions">
+          <Link href="/" className="back-link">
+            На главную
+          </Link>
+          <form action={logoutAction}>
+            <button type="submit" className="back-link">
+              Выйти
+            </button>
+          </form>
+        </div>
+        <TeacherDashboard
+          copiedInvite={params?.copied === "1"}
+          createInvitationAction={createTeacherInvitationAction}
+          createdInviteCode={params?.invite}
+          createdInviteUrl={createdInviteUrl}
+          invitations={invitations}
+          query={query}
+          sortKey={sortKey}
+          students={students}
+        />
       </main>
     </div>
   );

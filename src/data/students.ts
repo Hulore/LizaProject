@@ -1,3 +1,5 @@
+import { createSupabaseServerClient } from "@/lib/supabase";
+
 export type Student = {
   id: number;
   name: string;
@@ -114,3 +116,45 @@ export const students: Student[] = [
     averageScore: 49,
   },
 ];
+
+type SupabaseStudent = {
+  id: number;
+  name: string;
+  login: string;
+  invite_code: string;
+  subjects: string[] | null;
+  exams: string[] | null;
+  last_activity: string | null;
+  completed_tasks: number | null;
+  average_score: number | null;
+};
+
+export async function getStudentsForTeacher(): Promise<Student[]> {
+  const supabase = createSupabaseServerClient();
+
+  if (!supabase) {
+    return students;
+  }
+
+  const { data, error } = await supabase
+    .from("students")
+    .select("id, name, login, invite_code, subjects, exams, last_activity, completed_tasks, average_score")
+    .order("name", { ascending: true });
+
+  if (error || !data) {
+    return students;
+  }
+
+  return (data as SupabaseStudent[]).map((student) => ({
+    id: student.id,
+    name: student.name,
+    login: student.login,
+    password: "stored-in-supabase",
+    inviteCode: student.invite_code,
+    subjects: student.subjects ?? [],
+    exams: student.exams ?? [],
+    lastActivity: student.last_activity ?? "Еще не заходил",
+    completedTasks: student.completed_tasks ?? 0,
+    averageScore: student.average_score ?? 0,
+  }));
+}
