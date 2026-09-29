@@ -1,11 +1,6 @@
 import Image from "next/image";
+import { getPublishedTasks, getTaskMeta } from "@/lib/task-bank";
 import {
-  egeImportedSocialStudiesNumbers,
-  egeImportedSocialStudiesMeta,
-  egeImportedSocialStudiesTopics,
-} from "@/data/social-studies-ege-imported-meta";
-import {
-  egeImportedSocialStudiesTasks,
   type EgeImportedSocialStudiesTask,
 } from "@/data/social-studies-ege-imported-tasks";
 
@@ -13,16 +8,6 @@ type CatalogView = "types" | "topics";
 
 function getTaskKind(value: string | undefined) {
   return value === "ege_imported_text_answer" || value === "ege_imported_free_answer" ? value : "";
-}
-
-function getTopic(value: string | undefined) {
-  return value && egeImportedSocialStudiesTopics.includes(value) ? value : "";
-}
-
-function getNumber(value: string | undefined) {
-  const parsed = Number(value);
-
-  return egeImportedSocialStudiesNumbers.includes(parsed) ? parsed : 0;
 }
 
 function getCatalogView(value: string | undefined): CatalogView {
@@ -72,7 +57,9 @@ function TaskContent({ task }: { task: EgeImportedSocialStudiesTask }) {
   );
 }
 
-function NumberCatalog() {
+function NumberCatalog({ tasks }: {tasks: EgeImportedSocialStudiesTask[]}) {
+  const egeImportedSocialStudiesMeta = getTaskMeta(tasks);
+  const egeImportedSocialStudiesNumbers = egeImportedSocialStudiesMeta.numbers;
   return (
     <div className="catalog-table" aria-label="Каталог заданий по номерам ЕГЭ">
       {egeImportedSocialStudiesNumbers.map((number) => {
@@ -116,7 +103,10 @@ function NumberCatalog() {
   );
 }
 
-function TopicCatalog() {
+function TopicCatalog({ tasks }: {tasks: EgeImportedSocialStudiesTask[]}) {
+  const egeImportedSocialStudiesMeta = getTaskMeta(tasks);
+  const egeImportedSocialStudiesTopics = egeImportedSocialStudiesMeta.topics;
+  const egeImportedSocialStudiesTasks = tasks;
   return (
     <div className="catalog-table" aria-label="Каталог заданий по темам">
       {egeImportedSocialStudiesTopics.map((topic, index) => {
@@ -159,7 +149,7 @@ function TopicCatalog() {
   );
 }
 
-export function SocialStudiesTaskCatalog({
+export async function SocialStudiesTaskCatalog({
   catalogView,
   number,
   taskKind,
@@ -170,8 +160,12 @@ export function SocialStudiesTaskCatalog({
   taskKind?: string;
   topic?: string;
 }) {
-  const selectedNumber = getNumber(number);
-  const selectedTopic = getTopic(topic);
+  const egeImportedSocialStudiesTasks = (await getPublishedTasks()).filter((task): task is EgeImportedSocialStudiesTask => task.exam === "ege");
+  const egeImportedSocialStudiesMeta = getTaskMeta(egeImportedSocialStudiesTasks);
+  const egeImportedSocialStudiesNumbers = egeImportedSocialStudiesMeta.numbers;
+  const egeImportedSocialStudiesTopics = egeImportedSocialStudiesMeta.topics;
+  const selectedNumber = egeImportedSocialStudiesNumbers.includes(Number(number)) ? Number(number) : 0;
+  const selectedTopic = topic && egeImportedSocialStudiesTopics.includes(topic) ? topic : "";
   const selectedTaskKind = getTaskKind(taskKind);
   const selectedCatalogView = getCatalogView(catalogView);
 
@@ -211,7 +205,7 @@ export function SocialStudiesTaskCatalog({
           <strong>{egeImportedSocialStudiesMeta.total}</strong>
         </div>
 
-        {selectedCatalogView === "topics" ? <TopicCatalog /> : <NumberCatalog />}
+        {selectedCatalogView === "topics" ? <TopicCatalog tasks={egeImportedSocialStudiesTasks} /> : <NumberCatalog tasks={egeImportedSocialStudiesTasks} />}
       </div>
 
       <form action="/social-studies/ege#tasks" className="task-picker" method="get">

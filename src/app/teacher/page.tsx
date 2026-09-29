@@ -41,6 +41,7 @@ export default async function TeacherPage({
           <Link href="/" className="back-link">
             На главную
           </Link>
+          <Link href="/teacher/tasks" className="back-link">Управление заданиями</Link>
           <form action={logoutAction}>
             <button type="submit" className="back-link">
               Выйти

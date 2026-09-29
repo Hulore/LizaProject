@@ -10,19 +10,16 @@ import {
   type SocialStudiesTask,
 } from "@/data/social-studies-tasks";
 import {
-  egeImportedSocialStudiesNumbers,
-  egeImportedSocialStudiesMeta,
-  egeImportedSocialStudiesTopics,
+  egeImportedSocialStudiesMeta as defaultEgeMeta,
 } from "@/data/social-studies-ege-imported-meta";
 import type { EgeImportedSocialStudiesTask } from "@/data/social-studies-ege-imported-tasks";
 import {
-  ogeSocialStudiesNumbers,
   ogeSocialStudiesTaskKindLabels,
-  ogeSocialStudiesTasks,
-  ogeSocialStudiesTopics,
+  ogeSocialStudiesTasks as defaultOgeTasks,
   type OgeSocialStudiesTask,
 } from "@/data/social-studies-oge-tasks";
 import type { Exam } from "@/data/subjects";
+import type { getTaskMeta } from "@/lib/task-bank";
 
 type TrainerMode = "topic" | "number" | "variant";
 type AnswerMap = Record<string, string[]>;
@@ -45,6 +42,7 @@ function normalizeTextAnswer(value: string) {
 }
 
 function isImportedOrderSensitive(task: EgeImportedSocialStudiesTask) {
+  if (task.answer.orderConfigured) return task.answer.orderMatters;
   return [3, 6, 13, 14, 15].includes(task.number);
 }
 
@@ -339,7 +337,13 @@ function TrainerQuestion({
   return <ChoiceAnswer answer={answer} onChange={onAnswer} task={task} />;
 }
 
-export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
+export function SocialStudiesTrainer({ exam, taskMeta, ogeTasks }: { exam: Exam; taskMeta?: ReturnType<typeof getTaskMeta>; ogeTasks?: OgeSocialStudiesTask[] }) {
+  const egeImportedSocialStudiesMeta = taskMeta ?? defaultEgeMeta;
+  const egeImportedSocialStudiesTopics = egeImportedSocialStudiesMeta.topics;
+  const egeImportedSocialStudiesNumbers = egeImportedSocialStudiesMeta.numbers;
+  const ogeSocialStudiesTasks = ogeTasks ?? defaultOgeTasks;
+  const ogeSocialStudiesTopics = [...new Set(ogeSocialStudiesTasks.map(task=>task.topic))];
+  const ogeSocialStudiesNumbers = [...new Set(ogeSocialStudiesTasks.map(task=>task.number))];
   const examLabel = exam.toUpperCase();
   const tasks: TrainerTask[] = exam === "oge" ? ogeSocialStudiesTasks : socialStudiesTasks;
   const topics = exam === "oge" ? ogeSocialStudiesTopics : egeImportedSocialStudiesTopics.length ? egeImportedSocialStudiesTopics : socialStudiesTopics;
@@ -409,11 +413,8 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
     try {
       const response = await fetch(`/api/social-studies/ege-tasks?${searchParams.toString()}`);
 
-      if (!response.ok) {
-        throw new Error("Не удалось загрузить задания");
-      }
-
-      const data = (await response.json()) as { tasks: EgeImportedSocialStudiesTask[] };
+      const data = (await response.json()) as { tasks: EgeImportedSocialStudiesTask[]; error?:string };
+      if (!response.ok) throw new Error(data.error ?? "Не удалось загрузить задания");
 
       if (!data.tasks.length) {
         setTrainerError("Для этого выбора пока нет заданий.");
@@ -421,8 +422,8 @@ export function SocialStudiesTrainer({ exam }: { exam: Exam }) {
       }
 
       startTraining(nextMode, data.tasks);
-    } catch {
-      setTrainerError("Не получилось загрузить задания. Попробуй ещё раз.");
+    } catch (error) {
+      setTrainerError(error instanceof Error ? error.message : "Не получилось загрузить задания. Попробуй ещё раз.");
     } finally {
       setIsLoadingTasks(false);
     }

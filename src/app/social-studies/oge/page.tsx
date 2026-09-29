@@ -3,11 +3,14 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SocialStudiesTrainer } from "@/components/social-studies-trainer";
 import { getSubject } from "@/data/subjects";
+import { getPublishedTasks } from "@/lib/task-bank";
+import type { OgeSocialStudiesTask } from "@/data/social-studies-oge-tasks";
 
 export const metadata: Metadata = { title: "ОГЭ по обществознанию — Лиза + Вайб" };
 
-export default function SocialStudiesOgePage() {
+export default async function SocialStudiesOgePage() {
   const subject = getSubject("social-studies");
+  const tasks = (await getPublishedTasks()).filter((task): task is OgeSocialStudiesTask => task.exam === "oge");
 
   return (
     <div className="min-h-screen bg-white text-[var(--ink)]">
@@ -22,7 +25,7 @@ export default function SocialStudiesOgePage() {
           </Link>
         </section>
 
-        <SocialStudiesTrainer exam="oge" />
+        <SocialStudiesTrainer exam="oge" ogeTasks={tasks} />
       </main>
     </div>
   );

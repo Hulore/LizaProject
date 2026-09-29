@@ -14,7 +14,7 @@ export type EgeImportedSocialStudiesTask = {
   question: string;
   prompt: string;
   images?: string[];
-  answer: { value: string[]; orderMatters: true; autoCheck: boolean };
+  answer: { value: string[]; orderMatters: boolean; autoCheck: boolean; orderConfigured?: boolean };
   explanation: string;
   source: { name: string; sourceId: string; file: string };
 };

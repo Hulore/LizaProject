@@ -4,6 +4,8 @@ import { SiteHeader } from "@/components/site-header";
 import { SocialStudiesTaskCatalog } from "@/components/social-studies-task-catalog";
 import { SocialStudiesTrainer } from "@/components/social-studies-trainer";
 import { getSubject } from "@/data/subjects";
+import { getPublishedTasks, getTaskMeta } from "@/lib/task-bank";
+import type { EgeImportedSocialStudiesTask } from "@/data/social-studies-ege-imported-tasks";
 
 export const metadata: Metadata = { title: "ЕГЭ по обществознанию — Лиза + Вайб" };
 
@@ -14,6 +16,7 @@ export default async function SocialStudiesEgePage({
 }) {
   const params = await searchParams;
   const subject = getSubject("social-studies");
+  const tasks = (await getPublishedTasks()).filter((task): task is EgeImportedSocialStudiesTask => task.exam === "ege");
 
   return (
     <div className="min-h-screen bg-white text-[var(--ink)]">
@@ -28,7 +31,7 @@ export default async function SocialStudiesEgePage({
           </Link>
         </section>
 
-        <SocialStudiesTrainer exam="ege" />
+        <SocialStudiesTrainer exam="ege" taskMeta={getTaskMeta(tasks)} />
 
         <SocialStudiesTaskCatalog
           catalogView={params?.catalogView}
