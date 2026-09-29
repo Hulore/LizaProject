@@ -39,6 +39,11 @@ export async function loginAction(formData: FormData) {
   redirect("/");
 }
 
+export async function teacherLoginAction(formData: FormData) {
+  formData.set("role", "teacher");
+  return loginAction(formData);
+}
+
 export async function logoutAction() {
   await clearSession();
   redirect("/login");

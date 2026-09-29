@@ -1,13 +1,23 @@
 import "server-only";
 
 import { createHmac, timingSafeEqual } from "crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getPostgresPool } from "@/lib/postgres";
-import { createSupabaseServerClient } from "@/lib/supabase";
 
 const sessionCookieName = "liza_session";
 const sessionTtlSeconds = 60 * 60 * 8;
+
+async function shouldSecureSessionCookie() {
+  const requestHeaders = await headers();
+  const host = (requestHeaders.get("host") ?? "").split(":")[0];
+  const localHost = host === "localhost" || host === "127.0.0.1" ||
+    /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
+    /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(host);
+
+  return process.env.NODE_ENV === "production" && !localHost;
+}
 
 type UserSession = {
   role: "teacher" | "student";
@@ -46,22 +56,11 @@ function safeEqual(first: string, second: string) {
 }
 
 export async function verifyTeacherCredentials(login: string, password: string) {
-  const supabase = createSupabaseServerClient();
-
-  if (!supabase) {
-    return false;
-  }
-
-  const { data, error } = await supabase.rpc("verify_teacher_login", {
-    input_login: login,
-    input_password: password,
-  });
-
-  if (error) {
-    return false;
-  }
-
-  return data === true;
+  const result = await getPostgresPool().query<{ valid: boolean }>(
+    "select public.verify_teacher_login($1, $2) as valid",
+    [login, password],
+  );
+  return result.rows[0]?.valid === true;
 }
 
 export async function verifyStudentCredentials(login: string, password: string) {
@@ -95,7 +94,7 @@ export async function createSession({ login, name, role }: Pick<UserSession, "lo
   cookieStore.set(sessionCookieName, `${payload}.${signature}`, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: await shouldSecureSessionCookie(),
     path: "/",
     maxAge: sessionTtlSeconds,
   });
@@ -114,7 +113,7 @@ export async function clearSession() {
   cookieStore.set(sessionCookieName, "", {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: await shouldSecureSessionCookie(),
     path: "/",
     maxAge: 0,
   });

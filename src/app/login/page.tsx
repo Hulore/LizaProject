@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { teacherAccount } from "@/data/students";
 import { getSession } from "@/lib/auth";
-import { loginAction } from "./actions";
+import { loginAction, teacherLoginAction } from "./actions";
 
 export default async function LoginPage({
   searchParams,
@@ -58,7 +58,7 @@ export default async function LoginPage({
               <button type="submit" name="role" value="student">
                 Войти как ученик
               </button>
-              <button type="submit" name="role" value="teacher">
+              <button type="submit" formAction={teacherLoginAction}>
                 Войти как учитель
               </button>
             </div>
