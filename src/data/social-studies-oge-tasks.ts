@@ -10,6 +10,7 @@ export type OgeSocialStudiesTask = {
   sourceId: string;
   page: number;
   topic: string;
+  subtopic?: string;
   title: string;
   question: string;
   terms: string[];

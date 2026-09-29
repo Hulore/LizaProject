@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getTeacherSession } from "@/lib/auth";
 import { getTaskRecords, type ManagedTask, type TaskStatus } from "@/lib/task-bank";
 import { getPostgresPool } from "@/lib/postgres";
+import { compareSubtopics } from "@/lib/task-taxonomy";
 
 export async function GET(request: Request) {
   if (!await getTeacherSession()) return NextResponse.json({ error: "Нужен вход учителя." }, { status: 401 });
@@ -14,13 +15,16 @@ export async function GET(request: Request) {
   const exam = params.get("exam");
   const number = params.get("number");
   const status = params.get("status") ?? "active";
+  const subtopic = params.get('subtopic');
+  const subtopics = [...new Set(records.filter(r=>!exam || r.task.exam===exam).map(r=>r.task.subtopic ?? ''))].sort(compareSubtopics);
   records = records.filter(({ task, status: state }) =>
     (!exam || task.exam === exam) && (!number || task.number === Number(number)) &&
+    (subtopic === null || (task.subtopic ?? '') === subtopic) &&
     (status === "all" || (status === "active" ? state !== "archived" : state === status)) &&
     (!q || [task.id, task.sourceId, task.title, task.topic, task.question, task.taskKind==='oge_terms_definition' ? task.terms.join(' ') : task.prompt].join(" ").toLocaleLowerCase("ru").includes(q)),
-  ).sort((a,b)=>a.task.exam.localeCompare(b.task.exam) || a.task.number-b.task.number || a.task.id.localeCompare(b.task.id));
+  ).sort((a,b)=>(params.get('sort')==='subtopic' ? compareSubtopics(a.task.subtopic ?? '',b.task.subtopic ?? '') : 0) || a.task.exam.localeCompare(b.task.exam) || a.task.number-b.task.number || a.task.id.localeCompare(b.task.id));
   const page = Math.max(1, Number(params.get("page")) || 1);
-  return NextResponse.json({ total: records.length, records: records.slice((page-1)*30,page*30), page });
+  return NextResponse.json({ total: records.length, records: records.slice((page-1)*30,page*30), page, subtopics });
 }
 
 function validate(task: ManagedTask) {
@@ -31,6 +35,7 @@ function validate(task: ManagedTask) {
     if (typeof value !== "string" || value.length > 100000) return "Проверьте текстовые поля.";
   }
   if (!task.title.trim() || !task.topic.trim() || !task.question.trim()) return "Укажите название, тему и условие.";
+  if (task.subtopic !== undefined && (typeof task.subtopic!=='string' || task.subtopic.length>2000)) return "Проверьте подтему.";
   if (!task.answer || typeof task.source.sourceId !== 'string') return "Проверьте ответ и источник.";
   if (task.taskKind === "oge_terms_definition") {
     if (task.exam !== "oge" || task.number !== 1 || task.part !== 1) return "Выбор понятий ОГЭ поддерживается для №1.";

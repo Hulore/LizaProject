@@ -8,6 +8,7 @@ export type EgeImportedSocialStudiesTask = {
   number: number;
   sourceId: string;
   topic: string;
+  subtopic?: string;
   taskKind: "ege_imported_text_answer" | "ege_imported_free_answer";
   taskKindLabel: string;
   title: string;

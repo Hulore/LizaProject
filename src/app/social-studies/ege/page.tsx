@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "ЕГЭ по обществознан
 export default async function SocialStudiesEgePage({
   searchParams,
 }: {
-  searchParams?: Promise<{ catalogView?: string; number?: string; taskKind?: string; topic?: string }>;
+  searchParams?: Promise<{ catalogView?: string; number?: string; taskKind?: string; topic?: string; subtopic?: string; sort?:string }>;
 }) {
   const params = await searchParams;
   const subject = getSubject("social-studies");
@@ -38,6 +38,8 @@ export default async function SocialStudiesEgePage({
           number={params?.number}
           taskKind={params?.taskKind}
           topic={params?.topic}
+          subtopic={params?.subtopic==='*' ? undefined : params?.subtopic}
+          sort={params?.sort}
         />
       </main>
     </div>

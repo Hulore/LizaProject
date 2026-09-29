@@ -24,7 +24,8 @@ export async function GET(request: Request) {
 
   if (mode === "topic") {
     const topic = searchParams.get("topic") ?? "";
-    const tasks = egeImportedSocialStudiesTasks.filter((task) => task.topic === topic);
+    const subtopic = searchParams.get('subtopic');
+    const tasks = egeImportedSocialStudiesTasks.filter((task) => task.topic === topic && (subtopic===null || (task.subtopic ?? '')===subtopic));
 
     return NextResponse.json({ tasks: getLimitedTasks(tasks, count) });
   }
@@ -37,11 +38,13 @@ export async function GET(request: Request) {
   }
 
   if (mode === "variant") {
-    const tasks = egeImportedSocialStudiesNumbers
-      .map((number) => shuffleTasks(egeImportedSocialStudiesTasks.filter((task) => task.number === number))[0])
+    const testOnly = searchParams.get('part') === '1';
+    const requiredNumbers = testOnly ? egeImportedSocialStudiesNumbers.slice(0,16) : egeImportedSocialStudiesNumbers;
+    const tasks = requiredNumbers
+      .map((number) => shuffleTasks(egeImportedSocialStudiesTasks.filter((task) => task.number === number && (!testOnly || task.part===1)))[0])
       .filter(Boolean);
 
-    if (tasks.length !== 25) return NextResponse.json({error:"Для полного варианта нужны опубликованные задания каждого номера с 1 по 25."},{status:422});
+    if (tasks.length !== requiredNumbers.length) return NextResponse.json({error:`Для варианта нужны опубликованные задания каждого номера с 1 по ${testOnly ? 16 : 25}.`},{status:422});
 
     return NextResponse.json({ tasks });
   }

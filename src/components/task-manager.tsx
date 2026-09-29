@@ -23,6 +23,9 @@ export function TaskManager() {
   const [exam,setExam] = useState("");
   const [number,setNumber] = useState("");
   const [status,setStatus] = useState("active");
+  const [subtopic,setSubtopic] = useState('*');
+  const [subtopics,setSubtopics] = useState<string[]>([]);
+  const [sort,setSort] = useState('number');
   const [page,setPage] = useState(1);
   const [records,setRecords] = useState<TaskRecord[]>([]);
   const [total,setTotal] = useState(0);
@@ -55,15 +58,17 @@ export function TaskManager() {
       setLoading(true);
       try {
         const params = new URLSearchParams({q,exam,number,status,page:String(page)});
+        params.set('sort',sort);
+        if(subtopic!=='*') params.set('subtopic',subtopic);
         const result = await fetch(`/api/teacher/tasks?${params}`, {signal:controller.signal});
         const data = await result.json();
         if (!result.ok) throw new Error(data.error ?? "Не удалось загрузить задания.");
-        setRecords(data.records); setTotal(data.total); setError("");
+        setRecords(data.records); setTotal(data.total); setSubtopics(data.subtopics); setError("");
       } catch (e) { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "Ошибка загрузки."); }
       finally { if (!controller.signal.aborted) setLoading(false); }
     },200);
     return ()=>{clearTimeout(timer);controller.abort();};
-  },[q,exam,number,status,page,version]);
+  },[q,exam,number,status,page,version,sort,subtopic]);
 
   async function save(record: TaskRecord, isNew: boolean) {
     setBusy(true);setError("");setMessage("");
@@ -81,11 +86,12 @@ export function TaskManager() {
     const original = editing.task;
     const common = {
       ...original, title:String(form.get('title')), topic:String(form.get('topic')), number:Number(form.get('number')),
+      subtopic:String(form.get('subtopic') ?? ''),
       part:Number(form.get('part')) as 1|2, question:String(form.get('question')), explanation:String(form.get('explanation')),
       sourceId:String(form.get('sourceId')), source:{...original.source,name:String(form.get('sourceName')),sourceId:String(form.get('sourceId')),file:String(form.get('sourceFile'))},
     };
     const task = original.taskKind === 'oge_terms_definition' ? {
-      ...common, terms:lines(form.get('terms')), instruction:String(form.get('instruction')), codifier:String(form.get('codifier')), page:Number(form.get('page')),
+      ...common, terms:lines(form.get('terms')), instruction:String(form.get('instruction')), codifier:common.subtopic, page:Number(form.get('page')),
       source:{...common.source,page:Number(form.get('page'))}, answer:{...original.answer,concepts:lines(form.get('answers'))},
     } : {
       ...common, prompt:String(form.get('prompt')), images:lines(form.get('images')), taskKind:String(form.get('taskKind')), taskKindLabel:String(form.get('taskKindLabel')),
@@ -109,6 +115,8 @@ export function TaskManager() {
         <div className="manager-fields">
           <label>Название<input name="title" defaultValue={task.title} required /></label>
           <label>Тема<input name="topic" defaultValue={task.topic} required /></label>
+          <label>Подтема — раздел кодификатора<input name="subtopic" defaultValue={task.subtopic ?? ''} list="codifier-subtopics" placeholder="Например: 1.16 Искусство, его основные функции" /></label>
+          <datalist id="codifier-subtopics">{subtopics.filter(Boolean).map(item=><option key={item} value={item} />)}</datalist>
           <label>Номер задания<input name="number" type="number" min="1" max={task.exam==='ege'?25:1} defaultValue={task.number} required /></label>
           <label>Часть<select name="part" defaultValue={task.part}><option value="1">Первая</option>{task.exam==='ege' && <option value="2">Вторая</option>}</select></label>
           <label>Статус<select name="status" defaultValue={editing.status}>{Object.entries(statusNames).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
@@ -118,7 +126,7 @@ export function TaskManager() {
           <label>Понятия — каждое с новой строки<textarea name="terms" defaultValue={task.terms.join('\n')} rows={6} required /></label>
           <label>Инструкция<textarea name="instruction" defaultValue={task.instruction} rows={2} /></label>
           <label>Два правильных понятия — каждое с новой строки<textarea name="answers" defaultValue={task.answer.concepts.join('\n')} rows={2} required /></label>
-          <div className="manager-fields"><label>Кодификатор<input name="codifier" defaultValue={task.codifier} /></label><label>Страница источника<input name="page" type="number" min="1" defaultValue={task.page} /></label></div>
+          <div className="manager-fields"><label>Страница источника<input name="page" type="number" min="1" defaultValue={task.page} /></label></div>
         </> : <>
           <label>Текст задания, варианты ответа или таблица<textarea name="prompt" defaultValue={task.prompt} rows={12} /></label>
           <div className="manager-fields">
@@ -142,6 +150,8 @@ export function TaskManager() {
       </form>
     </section> : null}
     <div className="manager-filters">
+      <label>Подтема кодификатора<select value={subtopic} onChange={e=>{setSubtopic(e.target.value);setPage(1);}}><option value="*">Все подтемы</option>{subtopics.map(item=><option key={item} value={item}>{item || 'Без подтемы'}</option>)}</select></label>
+      <label>Сортировка заданий<select value={sort} onChange={e=>{setSort(e.target.value);setPage(1);}}><option value="number">По номеру задания</option><option value="subtopic">По разделу кодификатора</option></select></label>
       <label>Поиск<input value={q} onChange={e=>{setQ(e.target.value);setPage(1);}} placeholder="Текст, тема или номер источника" /></label>
       <label>Экзамен<select value={exam} onChange={e=>{setExam(e.target.value);setPage(1);}}><option value="">Все</option><option value="ege">ЕГЭ</option><option value="oge">ОГЭ</option></select></label>
       <label>Номер<input type="number" min="1" max="25" value={number} onChange={e=>{setNumber(e.target.value);setPage(1);}} /></label>
@@ -149,7 +159,7 @@ export function TaskManager() {
     </div>
     <p>{loading?'Загрузка…':`Найдено заданий: ${total}`}</p>
     <div className="manager-list">{records.map(record=><article key={record.task.id}>
-      <div><strong>{record.task.exam==='ege'?'ЕГЭ':'ОГЭ'} №{record.task.number} · {record.task.title}</strong><p>{record.task.topic} · Источник №{record.task.sourceId || '—'} · {statusNames[record.status]}</p><p>{(record.task.taskKind==='oge_terms_definition' ? record.task.question : record.task.prompt || record.task.question).slice(0,180)}</p></div>
+      <div><strong>{record.task.exam==='ege'?'ЕГЭ':'ОГЭ'} №{record.task.number} · {record.task.title}</strong><p>{record.task.topic} · Источник №{record.task.sourceId || '—'} · {statusNames[record.status]}</p><p>Подтема: {record.task.subtopic || 'не указана'}</p><p>{(record.task.taskKind==='oge_terms_definition' ? record.task.question : record.task.prompt || record.task.question).slice(0,180)}</p></div>
       <div className="manager-row-actions"><button disabled={busy} onClick={()=>{setEditing(record);setError('');window.scrollTo({top:0,behavior:'smooth'});}}>Редактировать</button>
         {record.status==='archived' ? <button disabled={busy} onClick={()=>save({...record,status:'draft'},false)}>Восстановить</button> : confirmDelete===record.task.id ? <><button disabled={busy} onClick={()=>{setConfirmDelete(null);void save({...record,status:'archived'},false);}}>Подтвердить удаление</button><button onClick={()=>setConfirmDelete(null)}>Отмена удаления</button></> : <button disabled={busy} onClick={()=>setConfirmDelete(record.task.id)}>Удалить</button>}
       </div>

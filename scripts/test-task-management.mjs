@@ -47,6 +47,20 @@ try {
   const oge=await save({task:{id:'',subject:'social_studies',exam:'oge',part:1,number:1,taskKind:'oge_terms_definition',sourceId:topic,topic,title:'Тест ОГЭ',question:'Выберите понятия',terms:['Наука','Религия','Доход'],instruction:'Выберите два',answer:{concepts:['Наука','Религия'],maxScore:2,autoCheck:'concepts_only'},explanation:'Тест',page:1,codifier:'',source:{name:'Тест',sourceId:topic,file:'',page:1}},status:'published',revision:0},true);created.push(oge.task.id);
   assert.ok((await (await fetch(base+'/social-studies/oge')).text()).includes(topic));
   assert.equal((await (await fetch(base+'/api/social-studies/ege-tasks?mode=variant')).json()).tasks.length,25);
+  const testVariant=await (await fetch(base+'/api/social-studies/ege-tasks?mode=variant&part=1')).json();
+  assert.equal(testVariant.tasks.length,16);
+  assert.deepEqual(testVariant.tasks.map(task=>task.number),Array.from({length:16},(_,i)=>i+1));
+  assert.ok(testVariant.tasks.every(task=>task.part===1));
+  const codifierList=await (await fetch(base+'/api/teacher/tasks?exam=ege&sort=subtopic',{headers})).json();
+  assert.ok(codifierList.subtopics.some(Boolean));
+  const subtopic=codifierList.records[0].task.subtopic;
+  assert.ok(subtopic);
+  const filtered=await (await fetch(base+'/api/teacher/tasks?exam=ege&subtopic='+encodeURIComponent(subtopic),{headers})).json();
+  assert.ok(filtered.records.every(record=>record.task.subtopic===subtopic));
+  const training=await (await fetch(base+'/api/social-studies/ege-tasks?mode=topic&topic='+encodeURIComponent(filtered.records[0].task.topic)+'&subtopic='+encodeURIComponent(subtopic))).json();
+  assert.ok(training.tasks.length && training.tasks.every(task=>task.subtopic===subtopic));
+  const catalog=await (await fetch(base+'/social-studies/ege?catalogView=topics&subtopic='+encodeURIComponent(subtopic))).text();
+  assert.ok(catalog.includes('Подтема кодификатора'));
   console.log('PASS: access control, creation, drafts, publishing, editing, conflict protection, deletion, restore, search, history, images, OGE and full variant.');
 } finally {
   for(const id of created){await pool.query('delete from public.task_change_history where task_id=$1',[id]);await pool.query('delete from public.task_overrides where id=$1',[id]);}

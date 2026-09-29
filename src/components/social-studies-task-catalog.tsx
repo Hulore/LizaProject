@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { getPublishedTasks, getTaskMeta } from "@/lib/task-bank";
+import { compareSubtopics } from "@/lib/task-taxonomy";
 import {
   type EgeImportedSocialStudiesTask,
 } from "@/data/social-studies-ege-imported-tasks";
@@ -18,7 +19,7 @@ function getAnswerText(task: EgeImportedSocialStudiesTask) {
   return task.answer.autoCheck ? task.answer.value.join(" или ") : "автоматического ответа нет — смотри пояснение/критерии";
 }
 
-function getTaskHref(params: { number?: number; topic?: string; taskKind?: string }) {
+function getTaskHref(params: { number?: number; topic?: string; taskKind?: string; subtopic?:string }) {
   const searchParams = new URLSearchParams();
 
   if (params.number) {
@@ -34,8 +35,9 @@ function getTaskHref(params: { number?: number; topic?: string; taskKind?: strin
   }
 
   const query = searchParams.toString();
+  if (params.subtopic!==undefined) searchParams.set('subtopic',params.subtopic);
 
-  return query ? `/social-studies/ege?${query}#tasks` : "/social-studies/ege#tasks";
+  return query || params.subtopic!==undefined ? `/social-studies/ege?${searchParams.toString()}#tasks` : "/social-studies/ege#tasks";
 }
 
 function TaskContent({ task }: { task: EgeImportedSocialStudiesTask }) {
@@ -106,13 +108,11 @@ function NumberCatalog({ tasks }: {tasks: EgeImportedSocialStudiesTask[]}) {
 function TopicCatalog({ tasks }: {tasks: EgeImportedSocialStudiesTask[]}) {
   const egeImportedSocialStudiesMeta = getTaskMeta(tasks);
   const egeImportedSocialStudiesTopics = egeImportedSocialStudiesMeta.topics;
-  const egeImportedSocialStudiesTasks = tasks;
   return (
     <div className="catalog-table" aria-label="Каталог заданий по темам">
       {egeImportedSocialStudiesTopics.map((topic, index) => {
         const topicTasksCount = egeImportedSocialStudiesMeta.countsByTopic[topic as keyof typeof egeImportedSocialStudiesMeta.countsByTopic] ?? 0;
-        const topicTasks = egeImportedSocialStudiesTasks.filter((task) => task.topic === topic);
-        const numbers = Array.from(new Set(topicTasks.map((task) => task.number))).sort((a, b) => a - b);
+        const subtopics = egeImportedSocialStudiesMeta.subtopicsByTopic[topic] ?? [];
 
         return (
           <div className="catalog-section" key={topic}>
@@ -129,14 +129,14 @@ function TopicCatalog({ tasks }: {tasks: EgeImportedSocialStudiesTask[]}) {
               </a>
             </div>
 
-            {numbers.map((number) => {
-              const count = topicTasks.filter((task) => task.number === number).length;
+            {subtopics.map((subtopic) => {
+              const count = egeImportedSocialStudiesMeta.countsByTopicAndSubtopic[topic][subtopic];
 
               return (
-                <div className="catalog-sub-row" key={number}>
-                  <a href={getTaskHref({ topic, number })}>Задание № {number}</a>
+                <div className="catalog-sub-row" key={subtopic}>
+                  <a href={getTaskHref({ topic, subtopic })}>{subtopic || 'Без подтемы'}</a>
                   <span>{count}</span>
-                  <a className="catalog-go-link" href={getTaskHref({ topic, number })}>
+                  <a className="catalog-go-link" href={getTaskHref({ topic, subtopic })}>
                     Перейти
                   </a>
                 </div>
@@ -154,11 +154,15 @@ export async function SocialStudiesTaskCatalog({
   number,
   taskKind,
   topic,
+  subtopic,
+  sort,
 }: {
   catalogView?: string;
   number?: string;
   taskKind?: string;
   topic?: string;
+  subtopic?:string;
+  sort?:string;
 }) {
   const egeImportedSocialStudiesTasks = (await getPublishedTasks()).filter((task): task is EgeImportedSocialStudiesTask => task.exam === "ege");
   const egeImportedSocialStudiesMeta = getTaskMeta(egeImportedSocialStudiesTasks);
@@ -170,6 +174,7 @@ export async function SocialStudiesTaskCatalog({
   const selectedCatalogView = getCatalogView(catalogView);
 
   const visibleTasks = egeImportedSocialStudiesTasks.filter((task) => {
+    if(subtopic!==undefined && (task.subtopic ?? '')!==subtopic) return false;
     if (selectedNumber && task.number !== selectedNumber) {
       return false;
     }
@@ -183,7 +188,7 @@ export async function SocialStudiesTaskCatalog({
     }
 
     return true;
-  });
+  }).sort((a,b)=>(sort==='subtopic' ? compareSubtopics(a.subtopic ?? '',b.subtopic ?? '') : 0) || a.number-b.number);
 
   return (
     <section className="social-task-shell">
@@ -209,12 +214,15 @@ export async function SocialStudiesTaskCatalog({
       </div>
 
       <form action="/social-studies/ege#tasks" className="task-picker" method="get">
+        {selectedCatalogView==='topics' && <input type="hidden" name="catalogView" value="topics" />}
         <div className="task-picker-head">
           <span>Подбор заданий</span>
           <strong>{visibleTasks.length}</strong>
         </div>
 
         <div className="task-picker-fields">
+          <label>Подтема кодификатора<select name="subtopic" defaultValue={subtopic ?? '*'}><option value="*">Все подтемы</option>{Object.keys(egeImportedSocialStudiesMeta.countsBySubtopic).sort(compareSubtopics).map(item=><option key={item} value={item}>{item || 'Без подтемы'}</option>)}</select></label>
+          <label>Сортировка<select name="sort" defaultValue={sort ?? 'number'}><option value="number">По номеру задания</option><option value="subtopic">По кодификатору</option></select></label>
           <label>
             Номер задания
             <select name="number" defaultValue={selectedNumber || ""}>
@@ -260,6 +268,7 @@ export async function SocialStudiesTaskCatalog({
               <span>Номер источника: {task.sourceId}</span>
               <span>ЕГЭ №{task.number}</span>
               <span>{task.topic}</span>
+              <span>Подтема: {task.subtopic || 'не указана'}</span>
               <span>{task.taskKindLabel}</span>
             </div>
 

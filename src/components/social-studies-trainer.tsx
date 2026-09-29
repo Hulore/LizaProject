@@ -338,7 +338,7 @@ function TrainerQuestion({
 }
 
 export function SocialStudiesTrainer({ exam, taskMeta, ogeTasks }: { exam: Exam; taskMeta?: ReturnType<typeof getTaskMeta>; ogeTasks?: OgeSocialStudiesTask[] }) {
-  const egeImportedSocialStudiesMeta = taskMeta ?? defaultEgeMeta;
+  const egeImportedSocialStudiesMeta = taskMeta ?? {...defaultEgeMeta, subtopicsByTopic:{} as Record<string,string[]>,countsByTopicAndSubtopic:{} as Record<string,Record<string,number>>};
   const egeImportedSocialStudiesTopics = egeImportedSocialStudiesMeta.topics;
   const egeImportedSocialStudiesNumbers = egeImportedSocialStudiesMeta.numbers;
   const ogeSocialStudiesTasks = ogeTasks ?? defaultOgeTasks;
@@ -351,6 +351,8 @@ export function SocialStudiesTrainer({ exam, taskMeta, ogeTasks }: { exam: Exam;
     exam === "oge" ? [...ogeSocialStudiesNumbers] : egeImportedSocialStudiesNumbers.length ? egeImportedSocialStudiesNumbers : socialStudiesNumbers;
   const [mode, setMode] = useState<TrainerMode | null>(null);
   const [selectedTopic, setSelectedTopic] = useState(topics[0]);
+  const [selectedSubtopic,setSelectedSubtopic] = useState('*');
+  const [variantPart,setVariantPart] = useState('all');
   const [selectedNumber, setSelectedNumber] = useState(numbers[0]);
   const [countByTopic, setCountByTopic] = useState(3);
   const [countByNumber, setCountByNumber] = useState(3);
@@ -376,7 +378,7 @@ export function SocialStudiesTrainer({ exam, taskMeta, ogeTasks }: { exam: Exam;
   const correctCount = autoCheckedTasks.filter((task) => isCorrect(task, answers[task.id])).length;
   const selectedTopicTotal =
     exam === "ege"
-      ? egeImportedSocialStudiesMeta.countsByTopic[selectedTopic as keyof typeof egeImportedSocialStudiesMeta.countsByTopic] ?? 0
+      ? selectedSubtopic!=='*' ? egeImportedSocialStudiesMeta.countsByTopicAndSubtopic[selectedTopic]?.[selectedSubtopic] ?? 0 : egeImportedSocialStudiesMeta.countsByTopic[selectedTopic as keyof typeof egeImportedSocialStudiesMeta.countsByTopic] ?? 0
       : topicTasks.length;
   const selectedNumberTotal =
     exam === "ege"
@@ -403,12 +405,14 @@ export function SocialStudiesTrainer({ exam, taskMeta, ogeTasks }: { exam: Exam;
     if (nextMode === "topic") {
       searchParams.set("topic", selectedTopic);
       searchParams.set("count", String(safeTopicCount));
+      if (selectedSubtopic!=='*') searchParams.set('subtopic',selectedSubtopic);
     }
 
     if (nextMode === "number") {
       searchParams.set("number", String(selectedNumber));
       searchParams.set("count", String(safeNumberCount));
     }
+    if (nextMode==='variant' && variantPart==='1') searchParams.set('part','1');
 
     try {
       const response = await fetch(`/api/social-studies/ege-tasks?${searchParams.toString()}`);
@@ -457,6 +461,7 @@ export function SocialStudiesTrainer({ exam, taskMeta, ogeTasks }: { exam: Exam;
           <div className="trainer-task-meta">
             <span>{examLabel} №{currentTask.number}</span>
             <span>{currentTask.topic}</span>
+            {'subtopic' in currentTask && currentTask.subtopic && <span>{currentTask.subtopic}</span>}
             <span>{getTaskKindLabel(currentTask)}</span>
             <span>{getSourceLabel(currentTask)}</span>
           </div>
@@ -552,7 +557,7 @@ export function SocialStudiesTrainer({ exam, taskMeta, ogeTasks }: { exam: Exam;
           <p>Выбираем тему и количество заданий, затем решаем их подряд.</p>
           <label>
             Тема
-            <select value={selectedTopic} onChange={(event) => setSelectedTopic(event.target.value)}>
+            <select value={selectedTopic} onChange={(event) => {setSelectedTopic(event.target.value);setSelectedSubtopic('*');}}>
               {topics.map((topic) => (
                 <option key={topic} value={topic}>
                   {topic}
@@ -560,6 +565,7 @@ export function SocialStudiesTrainer({ exam, taskMeta, ogeTasks }: { exam: Exam;
               ))}
             </select>
           </label>
+          {exam==='ege' && <label>Подтема — раздел кодификатора<select value={selectedSubtopic} onChange={event=>setSelectedSubtopic(event.target.value)}><option value="*">Все подтемы</option>{egeImportedSocialStudiesMeta.subtopicsByTopic[selectedTopic]?.map(item=><option key={item} value={item}>{item || 'Без подтемы'}</option>)}</select></label>}
           <label>
             Сколько заданий
             <select value={safeTopicCount} onChange={(event) => setCountByTopic(Number(event.target.value))}>
@@ -616,8 +622,9 @@ export function SocialStudiesTrainer({ exam, taskMeta, ogeTasks }: { exam: Exam;
         <article className="trainer-mode-card">
           <h3>3. Целый вариант</h3>
           <p>Собирается случайный вариант: по одному заданию каждого номера.</p>
+          {exam==='ege' && <label>Состав варианта<select value={variantPart} onChange={event=>setVariantPart(event.target.value)}><option value="all">Целый вариант — №1–25</option><option value="1">Только тестовая часть — №1–16</option></select></label>}
           <div className="trainer-variant-count">
-            Сейчас в варианте будет заданий: <b>{numbers.length}</b>
+            Сейчас в варианте будет заданий: <b>{exam==='ege' && variantPart==='1' ? 16 : numbers.length}</b>
           </div>
           <button
             disabled={isLoadingTasks}
