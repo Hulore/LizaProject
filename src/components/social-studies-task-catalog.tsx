@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { getPublishedTasks, getTaskMeta } from "@/lib/task-bank";
-import { compareSubtopics } from "@/lib/task-taxonomy";
+import { compareSubtopics, hasTaskSubtopic } from "@/lib/task-taxonomy";
 import {
   type EgeImportedSocialStudiesTask,
 } from "@/data/social-studies-ege-imported-tasks";
@@ -174,7 +174,7 @@ export async function SocialStudiesTaskCatalog({
   const selectedCatalogView = getCatalogView(catalogView);
 
   const visibleTasks = egeImportedSocialStudiesTasks.filter((task) => {
-    if(subtopic!==undefined && (task.subtopic ?? '')!==subtopic) return false;
+    if(subtopic!==undefined && !hasTaskSubtopic(task,subtopic)) return false;
     if (selectedNumber && task.number !== selectedNumber) {
       return false;
     }

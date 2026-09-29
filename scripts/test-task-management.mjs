@@ -53,12 +53,24 @@ try {
   assert.ok(testVariant.tasks.every(task=>task.part===1));
   const codifierList=await (await fetch(base+'/api/teacher/tasks?exam=ege&sort=subtopic',{headers})).json();
   assert.ok(codifierList.subtopics.some(Boolean));
-  const subtopic=codifierList.records[0].task.subtopic;
+  assert.ok(codifierList.subtopics.every(section=>!/[;\n]\s*\d+\.\d+/.test(section)));
+  const subtopic=codifierList.subtopics.find(Boolean);
   assert.ok(subtopic);
   const filtered=await (await fetch(base+'/api/teacher/tasks?exam=ege&subtopic='+encodeURIComponent(subtopic),{headers})).json();
-  assert.ok(filtered.records.every(record=>record.task.subtopic===subtopic));
+  assert.ok(filtered.records.length && filtered.records.every(record=>record.task.subtopic.split('; ').includes(subtopic)));
   const training=await (await fetch(base+'/api/social-studies/ege-tasks?mode=topic&topic='+encodeURIComponent(filtered.records[0].task.topic)+'&subtopic='+encodeURIComponent(subtopic))).json();
-  assert.ok(training.tasks.length && training.tasks.every(task=>task.subtopic===subtopic));
+  assert.ok(training.tasks.length && training.tasks.every(task=>task.subtopic.split('; ').includes(subtopic)));
+  const sections=['1.8 Тестовый раздел', '2.7 Тестовый раздел'];
+  record=await save({...record,status:'published',task:{...record.task,subtopic:sections.join('; ')+'; '+sections[0]+'.'}});
+  for(const section of sections){
+    const result=await (await fetch(studentUrl+'&subtopic='+encodeURIComponent(section))).json();
+    assert.equal(result.tasks.length,1);
+    assert.equal(result.tasks[0].subtopic,sections.join('; '));
+    const teacherResult=await (await fetch(base+'/api/teacher/tasks?q='+topic+'&subtopic='+encodeURIComponent(section),{headers})).json();
+    assert.equal(teacherResult.total,1);
+    assert.equal(teacherResult.subtopics.filter(value=>value===section).length,1);
+    assert.ok(!teacherResult.subtopics.includes(sections.join('; ')));
+  }
   const catalog=await (await fetch(base+'/social-studies/ege?catalogView=topics&subtopic='+encodeURIComponent(subtopic))).text();
   assert.ok(catalog.includes('Подтема кодификатора'));
   console.log('PASS: access control, creation, drafts, publishing, editing, conflict protection, deletion, restore, search, history, images, OGE and full variant.');

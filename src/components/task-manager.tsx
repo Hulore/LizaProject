@@ -29,6 +29,7 @@ export function TaskManager() {
   const [status,setStatus] = useState("active");
   const [subtopic,setSubtopic] = useState('*');
   const [subtopics,setSubtopics] = useState<string[]>([]);
+  const [subtopicsByExam,setSubtopicsByExam] = useState<Record<string,string[]>>({});
   const [sort,setSort] = useState('number');
   const [page,setPage] = useState(1);
   const [records,setRecords] = useState<TaskRecord[]>([]);
@@ -68,7 +69,7 @@ export function TaskManager() {
         const result = await fetch(`/api/teacher/tasks?${params}`, {signal:controller.signal});
         const data = await result.json();
         if (!result.ok) throw new Error(data.error ?? "Не удалось загрузить задания.");
-        setRecords(data.records); setTotal(data.total); setSubtopics(data.subtopics); setError("");
+        setRecords(data.records); setTotal(data.total); setSubtopics(data.subtopics); setSubtopicsByExam(data.subtopicsByExam ?? {}); setError("");
       } catch (e) { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "Ошибка загрузки."); }
       finally { if (!controller.signal.aborted) setLoading(false); }
     },200);
@@ -125,7 +126,7 @@ export function TaskManager() {
           <label>Статус<select name="status" defaultValue={editing.status}>{Object.entries(statusNames).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
         </div>
         <label>Подтема — раздел кодификатора<textarea ref={field=>{subtopicField.current=field;if(field) fitSubtopic(field);}} onInput={event=>fitSubtopic(event.currentTarget)} name="subtopic" defaultValue={task.subtopic ?? ''} rows={3} placeholder="Например: 1.16 Искусство, его основные функции" /></label>
-        <label>Выбрать существующую подтему<select defaultValue="" onChange={event=>{if(event.target.value && subtopicField.current){subtopicField.current.value=event.target.value;fitSubtopic(subtopicField.current);}}}><option value="">Выберите из списка или впишите название выше</option>{subtopics.filter(Boolean).map(item=><option key={item} value={item}>{item}</option>)}</select></label>
+        <label>Выбрать существующую подтему<select defaultValue="" onChange={event=>{if(event.target.value && subtopicField.current){subtopicField.current.value=event.target.value;fitSubtopic(subtopicField.current);}}}><option value="">Выберите из списка или впишите название выше</option>{(subtopicsByExam[task.exam] ?? []).filter(Boolean).map(item=><option key={item} value={item}>{item}</option>)}</select><small>Если разделов несколько, укажите их через точку с запятой в поле выше.</small></label>
         <label>Условие / вопрос<textarea name="question" defaultValue={task.question} rows={4} required /></label>
         {task.taskKind==='oge_terms_definition' ? <>
           <label>Понятия — каждое с новой строки<textarea name="terms" defaultValue={task.terms.join('\n')} rows={6} required /></label>

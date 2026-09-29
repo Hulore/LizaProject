@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPublishedTasks } from "@/lib/task-bank";
+import { hasTaskSubtopic } from "@/lib/task-taxonomy";
 import {
   type EgeImportedSocialStudiesTask,
 } from "@/data/social-studies-ege-imported-tasks";
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
   if (mode === "topic") {
     const topic = searchParams.get("topic") ?? "";
     const subtopic = searchParams.get('subtopic');
-    const tasks = egeImportedSocialStudiesTasks.filter((task) => task.topic === topic && (subtopic===null || (task.subtopic ?? '')===subtopic));
+    const tasks = egeImportedSocialStudiesTasks.filter((task) => task.topic === topic && (subtopic===null || hasTaskSubtopic(task,subtopic)));
 
     return NextResponse.json({ tasks: getLimitedTasks(tasks, count) });
   }
