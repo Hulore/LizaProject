@@ -7,6 +7,7 @@ export type UserSession = {
   role: "teacher" | "student";
   login: string;
   name?: string;
+  version?: number;
   exp: number;
 };
 

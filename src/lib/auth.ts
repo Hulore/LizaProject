@@ -41,10 +41,10 @@ export async function verifyStudentCredentials(login: string, password: string) 
   return { login, name: student.name };
 }
 
-export async function createSession({ login, name, role }: Pick<UserSession, "login" | "name" | "role">) {
+export async function createSession({ login, name, role, version }: Pick<UserSession, "login" | "name" | "role" | "version">) {
   const cookieStore = await cookies();
 
-  cookieStore.set(sessionCookieName, encodeSession({ role, login, name }), {
+  cookieStore.set(sessionCookieName, encodeSession({ role, login, name, version }), {
     httpOnly: true,
     sameSite: "lax",
     secure: await shouldSecureSessionCookie(),
@@ -54,7 +54,11 @@ export async function createSession({ login, name, role }: Pick<UserSession, "lo
 }
 
 export async function createTeacherSession(login: string) {
-  await createSession({ role: "teacher", login, name: login });
+  const result = await getPostgresPool().query<{ session_version: number }>(
+    "select session_version from public.teacher_accounts where login=$1", [login],
+  );
+  if (!result.rows[0]) throw new Error("Teacher account not found.");
+  await createSession({ role: "teacher", login, name: login, version: result.rows[0].session_version });
 }
 
 export async function createStudentSession(login: string, name: string) {
@@ -75,8 +79,12 @@ export async function clearSession() {
 export async function getSession() {
   const cookieStore = await cookies();
   const rawSession = cookieStore.get(sessionCookieName)?.value;
-
-  return decodeSession(rawSession);
+  const session = decodeSession(rawSession);
+  if (session?.role !== "teacher") return session;
+  const result = await getPostgresPool().query<{ session_version: number }>(
+    "select session_version from public.teacher_accounts where login=$1", [session.login],
+  );
+  return result.rows[0]?.session_version === session.version ? session : null;
 }
 
 export async function getTeacherSession() {

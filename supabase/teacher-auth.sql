@@ -13,4 +13,4 @@ as $$
 $$;
 
 revoke all on function public.verify_teacher_login(text, text) from public;
-grant execute on function public.verify_teacher_login(text, text) to anon, authenticated;
+revoke execute on function public.verify_teacher_login(text, text) from anon, authenticated;

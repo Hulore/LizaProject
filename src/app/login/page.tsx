@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
-import { teacherAccount } from "@/data/students";
 import { getSession } from "@/lib/auth";
 import { loginAction, teacherLoginAction } from "./actions";
 
@@ -33,7 +32,7 @@ export default async function LoginPage({
           <form action={loginAction} className="auth-form">
             <label>
               <span>Логин</span>
-              <input name="login" placeholder="Например: TestTeacher" required />
+              <input name="login" placeholder="Логин" required />
             </label>
 
             <label>
@@ -64,9 +63,6 @@ export default async function LoginPage({
             </div>
           </form>
 
-          <p className="teacher-test-login">
-            Тест учителя: {teacherAccount.login} / {teacherAccount.password}
-          </p>
         </section>
       </main>
     </div>

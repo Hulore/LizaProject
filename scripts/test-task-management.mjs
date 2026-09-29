@@ -16,6 +16,8 @@ try {
   assert.equal(login.headers.get('location'),'/teacher');
   const cookie = login.headers.get('set-cookie').split(';')[0];
   const headers = {Cookie:cookie,'Content-Type':'application/json'};
+  const teacherPage = await (await fetch(base+'/teacher',{headers})).text();
+  assert.ok(teacherPage.includes('Сменить пароль учителя'));
   async function save(record,isNew=false,expected=200) {
     const response=await fetch(base+'/api/teacher/tasks',{method:'POST',headers,body:JSON.stringify({...record,isNew})});
     const data=await response.json();assert.equal(response.status,expected,JSON.stringify(data));return data.record;
