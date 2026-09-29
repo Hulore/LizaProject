@@ -5,6 +5,10 @@ import type { ManagedTask, TaskRecord, TaskStatus } from "@/lib/task-bank";
 
 const statusNames = { published: "Опубликовано", draft: "Черновик", archived: "Удалено" };
 const lines = (text: FormDataEntryValue | null) => String(text ?? "").split("\n").map(s=>s.trim()).filter(Boolean);
+function fitSubtopic(field: HTMLTextAreaElement) {
+  field.style.height = 'auto';
+  field.style.height = `${Math.max(90,field.scrollHeight+2)}px`;
+}
 
 function blankTask(exam: "ege" | "oge"): TaskRecord {
   const common = { id: "", subject: "social_studies" as const, sourceId: "", topic: "", title: "", question: "", explanation: "", part: 1 as const, number: 1 };
@@ -36,6 +40,7 @@ export function TaskManager() {
   const [message,setMessage] = useState("");
   const [error,setError] = useState("");
   const imagePaths = useRef<HTMLTextAreaElement>(null);
+  const subtopicField = useRef<HTMLTextAreaElement>(null);
   const [uploading,setUploading] = useState(false);
   const [confirmDelete,setConfirmDelete] = useState<string | null>(null);
 
@@ -115,12 +120,12 @@ export function TaskManager() {
         <div className="manager-fields">
           <label>Название<input name="title" defaultValue={task.title} required /></label>
           <label>Тема<input name="topic" defaultValue={task.topic} required /></label>
-          <label>Подтема — раздел кодификатора<input name="subtopic" defaultValue={task.subtopic ?? ''} list="codifier-subtopics" placeholder="Например: 1.16 Искусство, его основные функции" /></label>
-          <datalist id="codifier-subtopics">{subtopics.filter(Boolean).map(item=><option key={item} value={item} />)}</datalist>
           <label>Номер задания<input name="number" type="number" min="1" max={task.exam==='ege'?25:1} defaultValue={task.number} required /></label>
           <label>Часть<select name="part" defaultValue={task.part}><option value="1">Первая</option>{task.exam==='ege' && <option value="2">Вторая</option>}</select></label>
           <label>Статус<select name="status" defaultValue={editing.status}>{Object.entries(statusNames).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
         </div>
+        <label>Подтема — раздел кодификатора<textarea ref={field=>{subtopicField.current=field;if(field) fitSubtopic(field);}} onInput={event=>fitSubtopic(event.currentTarget)} name="subtopic" defaultValue={task.subtopic ?? ''} rows={3} placeholder="Например: 1.16 Искусство, его основные функции" /></label>
+        <label>Выбрать существующую подтему<select defaultValue="" onChange={event=>{if(event.target.value && subtopicField.current){subtopicField.current.value=event.target.value;fitSubtopic(subtopicField.current);}}}><option value="">Выберите из списка или впишите название выше</option>{subtopics.filter(Boolean).map(item=><option key={item} value={item}>{item}</option>)}</select></label>
         <label>Условие / вопрос<textarea name="question" defaultValue={task.question} rows={4} required /></label>
         {task.taskKind==='oge_terms_definition' ? <>
           <label>Понятия — каждое с новой строки<textarea name="terms" defaultValue={task.terms.join('\n')} rows={6} required /></label>
